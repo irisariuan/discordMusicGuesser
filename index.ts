@@ -7,6 +7,7 @@ import { DEV, DEV_TOKEN, TOKEN } from "./lib/env/env";
 import { doubleDash, singleDash } from "./lib/env/flag";
 import { client, flags, manager } from "./lib/share/shared";
 import { compareArraysContent } from "./lib/utils";
+import { downloadPromiseQueue } from "./lib/voice/fs";
 
 if (flags.getAllFlags().length > 0) {
 	for (const flag of flags.getAllFlags()) {
@@ -63,3 +64,23 @@ client.on(Events.ClientReady, () => {
 });
 
 client.login(DEV ? DEV_TOKEN : TOKEN);
+
+process.on("SIGINT", () => {
+	console.log("Type /exit to exit");
+});
+
+process.stdin.on("data", async (data) => {
+	const textDecoder = new TextDecoder();
+	const input = textDecoder.decode(data).trim();
+	switch (input) {
+		case "/exit":
+			console.log("Exiting...");
+			await client.destroy();
+			console.log("Awaiting all downloads to finish...");
+			await Promise.all(downloadPromiseQueue);
+			console.log("All downloads finished.");
+			console.log("Goodbye!");
+			process.exit(0);
+			break;
+	}
+});
