@@ -1,5 +1,6 @@
 # dependencies (bun install)
 node_modules
+bun.lock
 
 # output
 out
@@ -35,6 +36,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 test/*
 !test/*.test.*
+
 downloads
 
 !.gitkeep
