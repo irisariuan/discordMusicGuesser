@@ -1,0 +1,165 @@
+import {
+	createAudioPlayer,
+	PlayerSubscription,
+	VoiceConnection,
+	VoiceConnectionStatus,
+	type AudioPlayer,
+} from "@discordjs/voice";
+import { queueManagers as sessionManagers } from "../shared";
+import {
+	prepareClipsResourceById,
+	prepareResource,
+	type PlayingResource,
+} from "./core";
+import { AudioResource } from "@discordjs/voice";
+import { shuffleArray } from "../utils";
+
+export class SessionManager {
+	queue: string[];
+	currentPlayedItems: PlayingResource[];
+	currentQueue: PlayingResource[];
+	currentItem: PlayingResource | null;
+	currentResource: AudioResource | null;
+	audioPlayer: AudioPlayer;
+	connection: VoiceConnection;
+
+	preparingResources: boolean;
+
+	clipLength: number;
+	clipNumber: number;
+
+	volume: number;
+
+	constructor(
+		subscription: PlayerSubscription,
+		clipNumber: number,
+		clipLength: number,
+		queue: string[] = [],
+	) {
+		this.audioPlayer = subscription.player;
+		this.connection = subscription.connection;
+		this.queue = queue;
+		this.currentItem = null;
+		this.currentResource = null;
+		this.currentQueue = [];
+		this.currentPlayedItems = [];
+		this.clipLength = clipLength;
+		this.clipNumber = clipNumber;
+		this.preparingResources = false;
+		this.volume = 1;
+	}
+	addToQueue(videoId: string): void {
+		this.queue.push(videoId);
+	}
+
+	setVolume(volume: number) {
+		if (volume < 0 || volume > 2) {
+			throw new Error("Volume must be between 0 and 2");
+		}
+		this.volume = volume;
+		this.currentResource?.volume?.setVolume(volume);
+	}
+
+	nextClip() {
+		const picked = this.currentQueue.shift();
+		if (!picked) return null;
+		if (this.currentItem) this.currentPlayedItems.push(this.currentItem);
+		this.currentItem = picked;
+		return this.currentItem;
+	}
+
+	async nextSong() {
+		const index = Math.floor(this.queue.length * Math.random());
+		const picked = this.queue.splice(index, 1)[0];
+		if (!picked) return null;
+		console.log(`Picked ${picked}`);
+		this.preparingResources = true;
+		this.currentPlayedItems = [];
+		const [firstResource, ...remainResources] = shuffleArray(
+			await prepareClipsResourceById({
+				id: picked,
+				clipLength: this.clipLength,
+				clipNumbers: this.clipNumber,
+			}),
+		);
+		this.preparingResources = false;
+		if (!firstResource) return null;
+		this.currentItem = firstResource;
+		this.currentQueue = remainResources;
+		return this.currentItem;
+	}
+
+	play(buffer: Buffer) {
+		this.currentResource = prepareResource(buffer);
+		this.currentResource.volume?.setVolume(this.volume);
+		this.audioPlayer.play(this.currentResource);
+	}
+
+	async playCurrentClip() {
+		if (!this.currentItem) return null;
+		this.play(this.currentItem.buffer);
+		return this.currentItem;
+	}
+
+	async playNextClip() {
+		const clip = this.nextClip();
+		if (!clip) return null;
+		this.play(clip.buffer);
+		return clip;
+	}
+	async playLastClip() {
+		if (this.currentPlayedItems.length === 0 || !this.currentItem)
+			return null;
+		const clip = this.currentPlayedItems.pop();
+		if (!clip) return null;
+		this.currentQueue.unshift(this.currentItem);
+		this.currentItem = clip;
+		this.play(clip.buffer);
+		return clip;
+	}
+}
+
+export function createSessionManager(
+	guildId: string,
+	connection: VoiceConnection,
+	clipNumber: number,
+	clipLength: number,
+	queue: string[] = [],
+): SessionManager {
+	const audioPlayer = createAudioPlayer();
+	const subscription = connection.subscribe(audioPlayer);
+	if (!subscription) {
+		throw new Error("Failed to subscribe to the voice connection.");
+	}
+	connection.on("stateChange", (state) => {
+		if (state.status === VoiceConnectionStatus.Disconnected) {
+			connection.destroy();
+			destroySessionManager(guildId);
+		}
+	});
+	const manager = new SessionManager(
+		subscription,
+		clipNumber,
+		clipLength,
+		queue,
+	);
+	sessionManagers.set(guildId, manager);
+	return manager;
+}
+
+export function getSessionManager(guildId: string): SessionManager | null {
+	return sessionManagers.get(guildId) ?? null;
+}
+
+export function hasSessionManager(guildId: string): boolean {
+	return sessionManagers.has(guildId);
+}
+
+export function destroySessionManager(guildId: string) {
+	const manager: SessionManager | undefined = sessionManagers.get(guildId);
+	if (manager) {
+		sessionManagers.delete(guildId);
+		return true;
+	}
+	return false;
+}

@@ -1,14 +1,9 @@
-import { Glob } from "bun";
+import { glob } from "glob";
 import { join } from "path";
 import type { BasicCommandFile, CommandFile } from "./type";
 
-export async function listCommandFiles() {
-	const glob = new Glob("commands/**/*.ts");
-	const files: string[] = [];
-	for await (const file of glob.scan(process.cwd())) {
-		files.push(file);
-	}
-	return files;
+export function listCommandFiles() {
+	return glob("commands/**/*.ts");
 }
 
 export async function loadCommands(): Promise<CommandFile[]> {

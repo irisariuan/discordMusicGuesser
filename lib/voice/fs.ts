@@ -1,11 +1,13 @@
 //TODO: implement download functionality faciliting ytdlp and ffmpeg to clip videos
 import { spawn } from "child_process";
 import { createWriteStream, existsSync, mkdirSync } from "fs";
+import { stat, readdir, unlink } from "fs/promises";
+import { readFile } from "fs/promises";
 import { join } from "path";
-import { Transform, type Readable } from "stream";
+import { type Readable } from "stream";
 import { pipeline } from "stream/promises";
 
-export const downloadPromiseQueue: Promise<void>[] = [];
+export const audioPromiseQueue: Promise<void>[] = [];
 
 export interface DownloadedItem {
 	lengthInSeconds: number;
@@ -48,20 +50,51 @@ export function download(videoId: string, showLog = false) {
 			console.log(errorMessage);
 		});
 	}
-	const transform = new Transform();
 	const writable = createWriteStream(createFilePath(videoId));
+	let buffer = Buffer.from([]);
 	proc.stdout.on("data", (data) => {
-		transform.push(data);
+		buffer = Buffer.concat([buffer, data]);
 	});
 	const promise = pipeline(proc.stdout, writable);
-	downloadPromiseQueue.push(promise);
-	return { promise, transform };
+	audioPromiseQueue.push(promise);
+	audioPromiseQueue.push(checkFolderSize())
+	return {
+		stdout: proc.stdout,
+		buffer: new Promise<Buffer>((resolve) => {
+			proc.stdout.once("close", async () => {
+				await promise;
+				resolve(buffer);
+			});
+		}),
+	};
 }
 
-export function clipAudio(source: Readable, period: [number, number]) {
+export async function getVideo(
+	videoId: string,
+	showLog = false,
+): Promise<Buffer> {
+	const filePath = createFilePath(videoId);
+	if (existsSync(filePath)) {
+		if (showLog) {
+			console.log(`Hit cache: ${filePath}`);
+		}
+		const buffer = await readFile(filePath);
+		if (buffer.length === 0) {
+			return download(videoId, showLog).buffer;
+		}
+		return buffer;
+	}
+	return await download(videoId, showLog).buffer;
+}
+
+export function clipAudio(
+	source: Readable,
+	period: [number, number],
+	showLog = false,
+) {
 	const args = [
 		"-i",
-		"-",
+		"pipe:0",
 		"-ss",
 		period[0].toString(),
 		"-to",
@@ -69,19 +102,39 @@ export function clipAudio(source: Readable, period: [number, number]) {
 		"-c",
 		"copy",
 		"-f",
-		"opus",
-		"-v",
-		"quiet",
+		"webm",
 		"pipe:1",
 	];
 
 	const proc = spawn("ffmpeg", args, {
-		shell: true,
-		stdio: ["pipe", "pipe", "inherit"],
+		stdio: ["pipe", "pipe", "pipe"],
 	});
 
-	source.pipe(proc.stdin);
-	return proc.stdout;
+	if (showLog) {
+		const decoder = new TextDecoder();
+		proc.stderr.on("data", (data) => {
+			const errorMessage = decoder.decode(data);
+			console.log(errorMessage);
+		});
+	}
+
+	pipeline(source, proc.stdin).catch((err) => {
+		if (err.code !== "EPIPE") {
+			console.error(err);
+			throw err;
+		}
+	});
+
+	let buffer = Buffer.from([]);
+	proc.stdout.on("data", (buf) => {
+		buffer = Buffer.concat([buffer, buf]);
+	});
+	const promise = new Promise<Buffer>((resolve) =>
+		proc.stdout.on("close", () => {
+			resolve(buffer);
+		}),
+	);
+	return { buffer: promise, stdout: proc.stdout };
 }
 
 interface VideoMetadata {
@@ -91,14 +144,23 @@ interface VideoMetadata {
 	};
 }
 
-export function getMetadata(source: Readable): Promise<VideoMetadata> {
-	const args = ["-v", "quiet", "-print_format", "json", "-show_format", "-"];
+export function getMetadata(
+	source: Readable,
+	showLog = false,
+): Promise<VideoMetadata> {
+	const args = ["-print_format", "json", "-show_format", "-"];
 
 	const proc = spawn("ffprobe", args, {
 		shell: true,
-		stdio: ["pipe", "pipe", "inherit"],
+		stdio: ["pipe", "pipe", "pipe"],
 	});
 	const decoder = new TextDecoder();
+	if (showLog) {
+		proc.stderr.on("data", (data) => {
+			const errorMessage = decoder.decode(data);
+			console.log(errorMessage);
+		});
+	}
 	let allData = "";
 	source.pipe(proc.stdin);
 	proc.stdout.on("data", (data) => {
@@ -115,4 +177,21 @@ export function getMetadata(source: Readable): Promise<VideoMetadata> {
 			reject(error);
 		});
 	});
+}
+
+export async function checkFolderSize() {
+	let size;
+	do {
+		({ size } = await stat(join(process.cwd(), "downloads")));
+		if (size > 100 * 1024 * 1024) {
+			// 100 MB
+			console.log("Downloads folder size exceeds 100 MB, cleaning up...");
+			const files = await readdir(join(process.cwd(), "downloads"));
+			for (const file of files) {
+				const filePath = join(process.cwd(), "downloads", file);
+				await unlink(filePath);
+				console.log(`Deleted: ${filePath}`);
+			}
+		}
+	} while (size > 100 * 1024 * 1024);
 }

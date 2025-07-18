@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { flags } from "../share/shared";
+import { flags } from "../shared";
 import { doubleDash, singleDash } from "./flag";
 
 export const DEV =
