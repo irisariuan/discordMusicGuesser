@@ -133,7 +133,6 @@ export function createSessionManager(
 	}
 	connection.on("stateChange", (state) => {
 		if (state.status === VoiceConnectionStatus.Disconnected) {
-			connection.destroy();
 			destroySessionManager(guildId);
 		}
 	});
@@ -158,6 +157,8 @@ export function hasSessionManager(guildId: string): boolean {
 export function destroySessionManager(guildId: string) {
 	const manager: SessionManager | undefined = sessionManagers.get(guildId);
 	if (manager) {
+		manager.audioPlayer.stop();
+		manager.connection.destroy();
 		sessionManagers.delete(guildId);
 		return true;
 	}
