@@ -50,19 +50,17 @@ if (
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (interaction.isButton()) {
 		if (!interaction.guildId || !hasSessionManager(interaction.guildId)) {
-			return interaction.reply({
-				content: "Unknown interaction",
-				flags: [MessageFlags.Ephemeral],
-			});
+			return await interaction.update({ withResponse: false });
 		}
 		const manager = getSessionManager(interaction.guildId);
 		if (!manager) {
-			throw new Error(
+			console.error(
 				`No session manager found for guild ${interaction.guildId}`,
 			);
+			return await interaction.update({ withResponse: false });
 		}
 		if (manager.preparingResources) {
-			return await interaction.deferUpdate();
+			return await interaction.update({ withResponse: false });
 		}
 		if (interaction.message.deletable) {
 			await interaction.message.delete();
@@ -70,13 +68,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 		switch (interaction.customId) {
 			case ButtonIds.LastClip: {
 				if (manager.currentPlayedItems.length === 0) {
-					return interaction.reply({
+					return await interaction.reply({
 						content: "No clips have been played yet.",
 						flags: [MessageFlags.Ephemeral],
 					});
 				}
 				if (await manager.playLastClip()) {
-					return interaction.reply({
+					return await interaction.reply({
 						content: `Playing the last played clip (${manager.clipNumber - manager.currentQueue.length}/${manager.clipNumber})`,
 						components: [
 							createButtons({
@@ -90,7 +88,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 			}
 			case ButtonIds.NextClip: {
 				if (await manager.playNextClip()) {
-					return interaction.reply({
+					return await interaction.reply({
 						content: `Playing the next clip (${manager.clipNumber - manager.currentQueue.length}/${manager.clipNumber})`,
 						components: [
 							createButtons({
@@ -107,13 +105,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 						() => null,
 					);
 					if (!lastMeta) {
-						return interaction.editReply({
+						return await interaction.editReply({
 							content:
 								"Failed to fetch metadata for the last song.",
 						});
 					}
 
-					return interaction.editReply({
+					return await interaction.editReply({
 						content: `Last song is ${lastMeta.title} (${completeUrl(lastId)})`,
 						components: [
 							createButtons({
@@ -127,7 +125,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 			}
 			case ButtonIds.Replay: {
 				await manager.playCurrentClip();
-				return interaction.reply({
+				return await interaction.reply({
 					content: `Replaying the last played clip (${manager.clipNumber - manager.currentQueue.length}/${manager.clipNumber})`,
 					components: [
 						createButtons({
@@ -166,13 +164,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 						() => null,
 					);
 					if (!lastMeta) {
-						return interaction.editReply({
+						return await interaction.editReply({
 							content:
 								"Failed to fetch metadata for the last song.",
 						});
 					}
 
-					interaction.editReply({
+					await interaction.editReply({
 						content: `Last song is ${lastMeta.title} (${completeUrl(lastId)})`,
 						components: [
 							createButtons({
@@ -185,7 +183,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 				break;
 			}
 			default: {
-				return interaction.reply({
+				return await interaction.reply({
 					content: "This button is not implemented yet.",
 					flags: [MessageFlags.Ephemeral],
 				});
@@ -195,7 +193,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 	if (!interaction.isChatInputCommand()) return;
 	const command = manager.getCommand(interaction.commandName);
 	if (!command) {
-		return interaction.reply({
+		return await interaction.reply({
 			content: "This command does not exist.",
 			flags: [MessageFlags.Ephemeral],
 		});
