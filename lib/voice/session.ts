@@ -68,20 +68,36 @@ export class SessionManager {
 		return this.currentItem;
 	}
 
-	async nextSong() {
+	async nextSong(
+		shuffle = true,
+		stack = 0,
+		maxStack = 5,
+	): Promise<PlayingResource | null> {
 		const index = Math.floor(this.queue.length * Math.random());
 		const picked = this.queue.splice(index, 1)[0];
 		if (!picked) return null;
 		console.log(`Picked ${picked}`);
 		this.preparingResources = true;
 		this.currentPlayedItems = [];
-		const [firstResource, ...remainResources] = shuffleArray(
-			await prepareClipsResourceById({
-				id: picked,
-				clipLength: this.clipLength,
-				clipNumbers: this.clipNumber,
-			}),
-		);
+		const resources = await prepareClipsResourceById({
+			id: picked,
+			clipLength: this.clipLength,
+			clipNumbers: this.clipNumber,
+		}).catch((err) => {
+			console.error(err);
+			return null;
+		});
+		if (!resources) {
+			if (stack >= maxStack) {
+				throw new Error(
+					`Failed to prepare resources for ${picked} after ${maxStack} attempts.`,
+				);
+			}
+			return await this.nextSong(shuffle, stack + 1, maxStack);
+		}
+		const [firstResource, ...remainResources] = shuffle
+			? shuffleArray(resources)
+			: resources;
 		this.preparingResources = false;
 		if (!firstResource) return null;
 		this.currentItem = firstResource;
