@@ -52,7 +52,7 @@ export function randomNumber(from: number, to: number) {
 	if (from > to) {
 		throw new Error("From must be less than or equal to To");
 	}
-	return Math.floor(Math.random() * (to - from + 1)) + from;
+	return Math.random() * (to - from + 1) + from;
 }
 
 export function roundTo(num: number, decimal = 3) {
@@ -60,10 +60,11 @@ export function roundTo(num: number, decimal = 3) {
 }
 
 export function shuffleArray<T>(array: Array<T>) {
-	const arr = [...array]
+	const arr = [...array];
 	for (let i = arr.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
+		// @ts-expect-error
 		[arr[i], arr[j]] = [arr[j], arr[i]];
 	}
-	return arr
+	return arr;
 }
