@@ -1,7 +1,7 @@
 import { AudioResource, createAudioResource } from "@discordjs/voice";
 import { Readable } from "stream";
 import { clipAudio, getMetadata, getVideo } from "./fs";
-import { randomNumber, roundTo } from "../utils";
+import { randomFloat, roundTo } from "../utils";
 
 export interface PlayingResource {
 	buffer: Buffer;
@@ -31,7 +31,7 @@ export async function prepareClipsResourceById({
 			(totalDuration / clipNumbers) * (i + 1) - clipLength < minStartTime
 				? (totalDuration / clipNumbers) * (i + 1)
 				: (totalDuration / clipNumbers) * (i + 1) - clipLength;
-		const startTime = roundTo(randomNumber(minStartTime, maxEndTime));
+		const startTime = roundTo(randomFloat(minStartTime, maxEndTime));
 		const endTime = roundTo(
 			Math.min(startTime + clipLength, totalDuration),
 		);

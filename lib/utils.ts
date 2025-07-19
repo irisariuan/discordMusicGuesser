@@ -48,7 +48,7 @@ export function anyInclude<T>(...arr: (T[] | T)[]) {
 	return false;
 }
 
-export function randomNumber(from: number, to: number) {
+export function randomFloat(from: number, to: number) {
 	if (from > to) {
 		throw new Error("From must be less than or equal to To");
 	}
