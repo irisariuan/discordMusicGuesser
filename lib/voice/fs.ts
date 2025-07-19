@@ -57,12 +57,24 @@ export function download(videoId: string, showLog = false) {
 	});
 	const promise = pipeline(proc.stdout, writable);
 	audioPromiseQueue.push(promise);
-	audioPromiseQueue.push(checkFolderSize())
+	audioPromiseQueue.push(checkFolderSize());
 	return {
 		stdout: proc.stdout,
-		buffer: new Promise<Buffer>((resolve) => {
+		buffer: new Promise<Buffer>((resolve, reject) => {
 			proc.stdout.once("close", async () => {
 				await promise;
+				if (buffer.length <= 0) {
+					console.error(`Failed to download video: ${videoId}`);
+					unlink(createFilePath(videoId)).catch((err) => {
+						console.error(
+							`Failed to delete empty file: ${videoId}`,
+							err,
+						);
+					});
+					return reject(
+						new Error(`Failed to download video: ${videoId}`),
+					);
+				}
 				resolve(buffer);
 			});
 		}),
@@ -170,8 +182,18 @@ export function getMetadata(
 		proc.on("close", (code) => {
 			if (code !== 0) {
 				console.error(`ffprobe process exited with code ${code}`);
+				return reject(new Error(`ffprobe exited with code ${code}`));
 			}
-			resolve(JSON.parse(allData));
+			try {
+				const metadata: VideoMetadata = JSON.parse(allData);
+				if (showLog) {
+					console.log("Video Metadata:", metadata);
+				}
+				resolve(metadata);
+			} catch (error) {
+				console.error("Failed to parse metadata:", error);
+				reject(error);
+			}
 		});
 		proc.on("error", (error) => {
 			reject(error);
