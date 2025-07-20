@@ -207,7 +207,6 @@ export function getMetadata(source: Readable): Promise<VideoMetadata> {
 
 export async function checkFolderSize() {
 	const { size } = await stat(downloadFolderPath);
-	console.log(size);
 	// 100 MB
 	if (size > 100) {
 		important("Downloads folder size exceeds 100 MB, cleaning up...");
