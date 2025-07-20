@@ -38,10 +38,11 @@ export default {
 			});
 		}
 		await interaction.deferReply();
+		const searchingIds = shuffleArray(manager.fixedQueue)
+			.slice(0, count)
+			.concat(manager.currentItem.id);
 		const searchResults = await Promise.all(
-			shuffleArray(
-				manager.fixedQueue.slice(count).concat(manager.currentItem.id),
-			).map((v) => yts({ videoId: v })),
+			searchingIds.map((v) => yts({ videoId: v })),
 		);
 		const hints = searchResults.map(
 			(video) =>

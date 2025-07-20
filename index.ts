@@ -67,7 +67,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 			return await interaction.update({ withResponse: false });
 		}
 		if (interaction.message.deletable) {
-			await interaction.message.delete();
+			await interaction.message.delete().catch();
 		}
 		switch (interaction.customId) {
 			case ButtonIds.LastClip: {
