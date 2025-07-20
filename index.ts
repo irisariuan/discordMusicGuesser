@@ -15,7 +15,7 @@ import {
 	hasSessionManager,
 } from "./lib/voice/session";
 import yts from "yt-search";
-import { completeUrl } from "./lib/youtube";
+import { completeUrl } from "./lib/youtube/core";
 
 if (flags.getAllFlags().length > 0) {
 	for (const flag of flags.getAllFlags()) {
