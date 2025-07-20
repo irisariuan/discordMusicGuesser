@@ -43,9 +43,10 @@ export default {
 				manager.fixedQueue.slice(count).concat(manager.currentItem.id),
 			).map((v) => yts({ videoId: v })),
 		);
-		const hints = searchResults.map((video) => {
-			return `**${video.title}** by *${video.author}* (${video.url})`;
-		});
+		const hints = searchResults.map(
+			(video) =>
+				`**${video.title}** by *${video.author.name}* (${video.url})`,
+		);
 		return interaction.editReply({
 			content: `Here are your hints:\n${hints.slice(0, count).join("\n\n")}`,
 		});
