@@ -206,18 +206,23 @@ export function getMetadata(source: Readable): Promise<VideoMetadata> {
 }
 
 export async function checkFolderSize() {
-	let size;
-	do {
-		({ size } = await stat(join(process.cwd(), "downloads")));
-		if (size > 100 * 1024 * 1024) {
-			// 100 MB
-			important("Downloads folder size exceeds 100 MB, cleaning up...");
-			const files = await readdir(join(process.cwd(), "downloads"));
-			for (const file of files) {
-				const filePath = join(process.cwd(), "downloads", file);
-				await unlink(filePath);
-				important(`Deleted: ${filePath}`);
+	const { size } = await stat(join(process.cwd(), "downloads"));
+	if (size > 100 * 1024 * 1024) {
+		// 100 MB
+		important("Downloads folder size exceeds 100 MB, cleaning up...");
+		const files = await readdir(join(process.cwd(), "downloads"));
+		for (const file of files) {
+			const filePath = join(process.cwd(), "downloads", file);
+			await unlink(filePath);
+			important(`Deleted: ${filePath}`);
+			const { size } = await stat(join(process.cwd(), "downloads"));
+			if (size <= 30 * 1024 * 1024) {
+				// 30 MB
+				important(
+					"Downloads folder size is now below 30 MB, stopping cleanup.",
+				);
+				return;
 			}
 		}
-	} while (size > 100 * 1024 * 1024);
+	}
 }
