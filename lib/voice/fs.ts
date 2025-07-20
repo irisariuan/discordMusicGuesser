@@ -6,7 +6,7 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 import { type Readable } from "stream";
 import { pipeline } from "stream/promises";
-import { error, debug, important } from "../log";
+import { error, debug, important, log } from "../log";
 import { flags } from "../shared";
 import { doubleDash, singleDash } from "../env/flag";
 import { completeUrl } from "../youtube/core";
@@ -217,7 +217,7 @@ export async function checkFolderSize() {
 			counter++;
 			const filePath = join(downloadFolderPath, file);
 			await unlink(filePath);
-			important(`Deleted: ${filePath}`);
+			log(`Deleted: ${filePath}`);
 			const { size } = await stat(downloadFolderPath);
 			if (size <= 30) {
 				// 30 MB

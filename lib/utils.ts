@@ -67,3 +67,18 @@ export function shuffleArray<T>(array: Array<T>) {
 	}
 	return arr;
 }
+
+export function readableTimestamp(duration: number) {
+	const hours = Math.floor(duration / 3600);
+	const minutes = Math.floor((duration % 3600) / 60);
+	const seconds = Math.floor(duration % 60);
+
+	const parts: string[] = [];
+	if (hours > 0) {
+		parts.push(hours.toString().padStart(2, "0"));
+	}
+	parts.push(minutes.toString().padStart(2, "0"));
+	parts.push(seconds.toString().padStart(2, "0"));
+
+	return parts.join(":");
+}
