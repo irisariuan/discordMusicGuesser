@@ -3,7 +3,7 @@ import { join } from "path";
 import type { BasicCommandFile, CommandFile } from "./type";
 
 export function listCommandFiles() {
-	return glob("commands/**/*.ts");
+	return glob("commands/**/*.(ts|js)");
 }
 
 export async function loadCommands(): Promise<CommandFile[]> {

@@ -7,7 +7,7 @@ export async function createCommandManager() {
 	return manager;
 }
 
-class CommandManager {
+export class CommandManager {
 	private commands: CommandFile[];
 	constructor() {
 		this.commands = [];
