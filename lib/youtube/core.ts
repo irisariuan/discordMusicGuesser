@@ -1,5 +1,5 @@
 import yts from "yt-search";
-import { error } from "../log";
+import { debug, error } from "../log";
 
 export function extractYouTubePlaylistId(url: string) {
 	if (!url) return false;

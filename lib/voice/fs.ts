@@ -6,9 +6,29 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 import { type Readable } from "stream";
 import { pipeline } from "stream/promises";
-import { error, log } from "../log";
+import { error, debug, important } from "../log";
+import { flags } from "../shared";
+import { doubleDash, singleDash } from "../env/flag";
+import { completeUrl } from "../youtube/core";
 
 export const audioPromiseQueue: Promise<void>[] = [];
+
+const showLog = flags.getFlagValue(
+	[singleDash("D"), singleDash("B"), doubleDash("debug")],
+	true,
+);
+
+function epipeCatcher(
+	err: NodeJS.ErrnoException,
+	callbackFunction: () => unknown = () => {
+		throw err;
+	},
+) {
+	debug("Piping exception", err.code);
+	if (err.code !== "EPIPE") {
+		callbackFunction();
+	}
+}
 
 export interface DownloadedItem {
 	lengthInSeconds: number;
@@ -22,11 +42,11 @@ function createFilePath(id: string) {
 	return join(process.cwd(), "downloads", `${id}.webm`);
 }
 
-export function download(videoId: string, showLog = false) {
+export function download(videoId: string) {
 	const proc = spawn(
 		"yt-dlp",
 		[
-			`"${videoId}"`,
+			completeUrl(videoId),
 
 			"--format",
 			"bestaudio",
@@ -39,7 +59,6 @@ export function download(videoId: string, showLog = false) {
 			"-",
 		],
 		{
-			shell: true,
 			stdio: ["ignore", "pipe", "pipe"],
 		},
 	);
@@ -48,7 +67,7 @@ export function download(videoId: string, showLog = false) {
 		proc.stderr.on("data", (data) => {
 			const decoder = new TextDecoder();
 			const errorMessage = decoder.decode(data);
-			log(errorMessage);
+			debug(errorMessage);
 		});
 	}
 	const writable = createWriteStream(createFilePath(videoId));
@@ -56,7 +75,7 @@ export function download(videoId: string, showLog = false) {
 	proc.stdout.on("data", (data) => {
 		buffer = Buffer.concat([buffer, data]);
 	});
-	const promise = pipeline(proc.stdout, writable);
+	const promise = pipeline(proc.stdout, writable).catch(epipeCatcher);
 	audioPromiseQueue.push(promise);
 	audioPromiseQueue.push(checkFolderSize());
 	return {
@@ -79,29 +98,22 @@ export function download(videoId: string, showLog = false) {
 	};
 }
 
-export async function getVideo(
-	videoId: string,
-	showLog = false,
-): Promise<Buffer> {
+export async function getVideo(videoId: string): Promise<Buffer> {
 	const filePath = createFilePath(videoId);
 	if (existsSync(filePath)) {
 		if (showLog) {
-			log(`Hit cache: ${filePath}`);
+			debug(`Hit cache: ${filePath}`);
 		}
-		const buffer = await readFile(filePath);
-		if (buffer.length === 0) {
-			return download(videoId, showLog).buffer;
+		const buffer = await readFile(filePath).catch(() => null);
+		if (!buffer || buffer.length === 0) {
+			return await download(videoId).buffer;
 		}
 		return buffer;
 	}
-	return await download(videoId, showLog).buffer;
+	return await download(videoId).buffer;
 }
 
-export function clipAudio(
-	source: Readable,
-	period: [number, number],
-	showLog = false,
-) {
+export function clipAudio(source: Readable, period: [number, number]) {
 	if (period[0] < 0 || period[1] < 0) {
 		throw new Error("Period start and end must be non-negative.");
 	}
@@ -128,26 +140,22 @@ export function clipAudio(
 		const decoder = new TextDecoder();
 		proc.stderr.on("data", (data) => {
 			const errorMessage = decoder.decode(data);
-			log(errorMessage);
+			debug(errorMessage);
 		});
 	}
-
-	pipeline(source, proc.stdin).catch((err) => {
-		if (err.code !== "EPIPE") {
-			error(err);
-			throw err;
-		}
-	});
 
 	let buffer = Buffer.from([]);
 	proc.stdout.on("data", (buf) => {
 		buffer = Buffer.concat([buffer, buf]);
 	});
+
 	const promise = new Promise<Buffer>((resolve) =>
 		proc.stdout.on("close", () => {
 			resolve(buffer);
 		}),
 	);
+
+	pipeline(source, proc.stdin).catch(epipeCatcher);
 	return { buffer: promise, stdout: proc.stdout };
 }
 
@@ -158,25 +166,21 @@ interface VideoMetadata {
 	};
 }
 
-export function getMetadata(
-	source: Readable,
-	showLog = false,
-): Promise<VideoMetadata> {
+export function getMetadata(source: Readable): Promise<VideoMetadata> {
 	const args = ["-print_format", "json", "-show_format", "-"];
 
 	const proc = spawn("ffprobe", args, {
-		shell: true,
 		stdio: ["pipe", "pipe", "pipe"],
 	});
 	const decoder = new TextDecoder();
 	if (showLog) {
 		proc.stderr.on("data", (data) => {
 			const errorMessage = decoder.decode(data);
-			log(errorMessage);
+			debug(errorMessage);
 		});
 	}
 	let allData = "";
-	source.pipe(proc.stdin);
+	pipeline(source, proc.stdin).catch(epipeCatcher);
 	proc.stdout.on("data", (data) => {
 		allData += decoder.decode(data);
 	});
@@ -189,7 +193,7 @@ export function getMetadata(
 			try {
 				const metadata: VideoMetadata = JSON.parse(allData);
 				if (showLog) {
-					log("Video Metadata:", metadata);
+					debug("Video Metadata:", metadata);
 				}
 				resolve(metadata);
 			} catch (err) {
@@ -197,9 +201,7 @@ export function getMetadata(
 				reject(err);
 			}
 		});
-		proc.on("error", (error) => {
-			reject(error);
-		});
+		proc.on("error", (err) => reject(err));
 	});
 }
 
@@ -209,12 +211,12 @@ export async function checkFolderSize() {
 		({ size } = await stat(join(process.cwd(), "downloads")));
 		if (size > 100 * 1024 * 1024) {
 			// 100 MB
-			log("Downloads folder size exceeds 100 MB, cleaning up...");
+			important("Downloads folder size exceeds 100 MB, cleaning up...");
 			const files = await readdir(join(process.cwd(), "downloads"));
 			for (const file of files) {
 				const filePath = join(process.cwd(), "downloads", file);
 				await unlink(filePath);
-				log(`Deleted: ${filePath}`);
+				important(`Deleted: ${filePath}`);
 			}
 		}
 	} while (size > 100 * 1024 * 1024);

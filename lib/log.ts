@@ -7,6 +7,7 @@ import { doubleDash, singleDash } from "./env/flag";
 const baseLogPath = join(process.cwd(), "logs");
 const logFilePath = join(baseLogPath, "log.txt");
 const errorLogFilePath = join(baseLogPath, "error.txt");
+const debugFilePath = join(baseLogPath, "debug.txt");
 
 if (!existsSync(baseLogPath)) {
 	mkdirSync(baseLogPath);
@@ -46,6 +47,21 @@ export function important(...data: unknown[]) {
 	}
 	const importantMessage = `[IMP] ${new Date().toISOString()}: ${data.join(" ")}\n`;
 	appendFile(logFilePath, importantMessage).catch((err) =>
+		console.error("[UNLOGGED] Failed to write to log file:", err),
+	);
+}
+
+export function debug(...data: unknown[]) {
+	if (
+		!flags.getFlagValue(
+			[singleDash("D"), singleDash("B"), doubleDash("debug")],
+			true,
+		)
+	)
+		return;
+	console.log(...data);
+	const debugMessage = `[DEBUG] ${new Date().toISOString()}: ${data.join(" ")}\n`;
+	appendFile(debugFilePath, debugMessage).catch((err) =>
 		console.error("[UNLOGGED] Failed to write to log file:", err),
 	);
 }

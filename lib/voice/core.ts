@@ -20,15 +20,13 @@ export async function prepareRandomClips({
 	id,
 	clipLength = 5,
 	clipNumbers = 3,
-	showLog = false,
 }: {
 	id: string;
 	clipLength?: number;
 	clipNumbers?: number;
-	showLog?: boolean;
 }): Promise<PlayingResource[]> {
-	const buffer = await getVideo(id, showLog);
-	const metadata = await getMetadata(Readable.from(buffer), showLog);
+	const buffer = await getVideo(id);
+	const metadata = await getMetadata(Readable.from(buffer));
 	const totalDuration = metadata.format.duration;
 
 	const segments = await getSegments(id);
@@ -54,7 +52,7 @@ export async function prepareRandomClips({
 		const endTime = roundTo(
 			Math.min(startTime + clipLength, clippedDuration),
 		);
-		
+
 		timemarks.push(
 			segmentTimemarks
 				? [
@@ -68,11 +66,10 @@ export async function prepareRandomClips({
 		timemarks.map(
 			async ([startTime, endTime]) =>
 				({
-					buffer: await clipAudio(
-						Readable.from(buffer),
-						[startTime, endTime],
-						showLog,
-					).buffer,
+					buffer: await clipAudio(Readable.from(buffer), [
+						startTime,
+						endTime,
+					]).buffer,
 					duration: [startTime, endTime],
 					id,
 					totalDuration,
