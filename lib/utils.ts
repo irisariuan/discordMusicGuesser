@@ -72,6 +72,7 @@ export function readableTimestamp(duration: number) {
 	const hours = Math.floor(duration / 3600);
 	const minutes = Math.floor((duration % 3600) / 60);
 	const seconds = Math.floor(duration % 60);
+	const miliseconds = Math.floor((duration % 1) * 10);
 
 	const parts: string[] = [];
 	if (hours > 0) {
@@ -80,5 +81,5 @@ export function readableTimestamp(duration: number) {
 	parts.push(minutes.toString().padStart(2, "0"));
 	parts.push(seconds.toString().padStart(2, "0"));
 
-	return parts.join(":");
+	return parts.join(":").concat(".", miliseconds.toString().padEnd(2, "0"));
 }
