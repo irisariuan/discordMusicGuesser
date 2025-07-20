@@ -1,4 +1,5 @@
 import yts from "yt-search";
+import { error } from "../log";
 
 export function extractYouTubePlaylistId(url: string) {
 	if (!url) return false;
@@ -17,8 +18,8 @@ export async function getVideoIdsFromPlaylist(playlistId: string) {
 	try {
 		const result = await yts({ listId: playlistId });
 		return result.videos.map((v) => v.videoId);
-	} catch (error) {
-		console.error("Error fetching YouTube playlist info:", error);
+	} catch (err) {
+		error("Error fetching YouTube playlist info:", err);
 		return null;
 	}
 }

@@ -13,6 +13,7 @@ import {
 } from "./core";
 import { AudioResource } from "@discordjs/voice";
 import { shuffleArray } from "../utils";
+import { log, error } from "console";
 
 export class SessionManager {
 	queue: string[];
@@ -76,7 +77,7 @@ export class SessionManager {
 		const index = Math.floor(this.queue.length * Math.random());
 		const picked = this.queue.splice(index, 1)[0];
 		if (!picked) return null;
-		console.log(`Picked ${picked}`);
+		log(`Picked ${picked}`);
 		this.preparingResources = true;
 		this.currentPlayedItems = [];
 		const resources = await prepareRandomClips({
@@ -84,7 +85,7 @@ export class SessionManager {
 			clipLength: this.clipLength,
 			clipNumbers: this.clipNumber,
 		}).catch((err) => {
-			console.error(err);
+			error(err);
 			return null;
 		});
 		if (!resources) {

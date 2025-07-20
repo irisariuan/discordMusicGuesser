@@ -1,4 +1,5 @@
 import z from "zod";
+import { log, error } from "../log";
 
 export enum SegmentCategory {
 	Sponsor = "sponsor",
@@ -36,7 +37,7 @@ export async function getSegments(
 	);
 	const res = await fetch(url);
 	if (!res.ok) {
-		console.error(
+		log(
 			`Failed to fetch ${id} with categories ${categories.join()}, Text:`,
 			await res.text(),
 		);
@@ -46,7 +47,7 @@ export async function getSegments(
 		.parseAsync(await res.json().catch(() => null))
 		.catch(() => null);
 	if (!result) {
-		console.error(`Failed to parse segments for ${id}`);
+		error(`Failed to parse segments for ${id}`);
 		return null;
 	}
 	return result.filter(

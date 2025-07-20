@@ -6,6 +6,7 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 import { type Readable } from "stream";
 import { pipeline } from "stream/promises";
+import { error, log } from "../log";
 
 export const audioPromiseQueue: Promise<void>[] = [];
 
@@ -47,7 +48,7 @@ export function download(videoId: string, showLog = false) {
 		proc.stderr.on("data", (data) => {
 			const decoder = new TextDecoder();
 			const errorMessage = decoder.decode(data);
-			console.log(errorMessage);
+			log(errorMessage);
 		});
 	}
 	const writable = createWriteStream(createFilePath(videoId));
@@ -64,12 +65,9 @@ export function download(videoId: string, showLog = false) {
 			proc.stdout.once("close", async () => {
 				await promise;
 				if (buffer.length <= 0) {
-					console.error(`Failed to download video: ${videoId}`);
+					error(`Failed to download video: ${videoId}`);
 					unlink(createFilePath(videoId)).catch((err) => {
-						console.error(
-							`Failed to delete empty file: ${videoId}`,
-							err,
-						);
+						error(`Failed to delete empty file: ${videoId}`, err);
 					});
 					return reject(
 						new Error(`Failed to download video: ${videoId}`),
@@ -88,7 +86,7 @@ export async function getVideo(
 	const filePath = createFilePath(videoId);
 	if (existsSync(filePath)) {
 		if (showLog) {
-			console.log(`Hit cache: ${filePath}`);
+			log(`Hit cache: ${filePath}`);
 		}
 		const buffer = await readFile(filePath);
 		if (buffer.length === 0) {
@@ -130,13 +128,13 @@ export function clipAudio(
 		const decoder = new TextDecoder();
 		proc.stderr.on("data", (data) => {
 			const errorMessage = decoder.decode(data);
-			console.log(errorMessage);
+			log(errorMessage);
 		});
 	}
 
 	pipeline(source, proc.stdin).catch((err) => {
 		if (err.code !== "EPIPE") {
-			console.error(err);
+			error(err);
 			throw err;
 		}
 	});
@@ -174,7 +172,7 @@ export function getMetadata(
 	if (showLog) {
 		proc.stderr.on("data", (data) => {
 			const errorMessage = decoder.decode(data);
-			console.log(errorMessage);
+			log(errorMessage);
 		});
 	}
 	let allData = "";
@@ -185,18 +183,18 @@ export function getMetadata(
 	return new Promise<VideoMetadata>((resolve, reject) => {
 		proc.on("close", (code) => {
 			if (code !== 0) {
-				console.error(`ffprobe process exited with code ${code}`);
+				error(`ffprobe process exited with code ${code}`);
 				return reject(new Error(`ffprobe exited with code ${code}`));
 			}
 			try {
 				const metadata: VideoMetadata = JSON.parse(allData);
 				if (showLog) {
-					console.log("Video Metadata:", metadata);
+					log("Video Metadata:", metadata);
 				}
 				resolve(metadata);
-			} catch (error) {
-				console.error("Failed to parse metadata:", error);
-				reject(error);
+			} catch (err) {
+				error("Failed to parse metadata:", err);
+				reject(err);
 			}
 		});
 		proc.on("error", (error) => {
@@ -211,12 +209,12 @@ export async function checkFolderSize() {
 		({ size } = await stat(join(process.cwd(), "downloads")));
 		if (size > 100 * 1024 * 1024) {
 			// 100 MB
-			console.log("Downloads folder size exceeds 100 MB, cleaning up...");
+			log("Downloads folder size exceeds 100 MB, cleaning up...");
 			const files = await readdir(join(process.cwd(), "downloads"));
 			for (const file of files) {
 				const filePath = join(process.cwd(), "downloads", file);
 				await unlink(filePath);
-				console.log(`Deleted: ${filePath}`);
+				log(`Deleted: ${filePath}`);
 			}
 		}
 	} while (size > 100 * 1024 * 1024);

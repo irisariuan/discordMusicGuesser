@@ -8,6 +8,7 @@ import {
 	getVideoIdsFromPlaylist,
 } from "../lib/youtube/core";
 import { createButtons } from "../lib/action";
+import { log } from "../lib/log";
 
 export default {
 	commmandBuilder: new SlashCommandBuilder()
@@ -97,7 +98,7 @@ export default {
 
 		let connection = getVoiceConnection(interaction.guildId);
 		if (!connection) {
-			console.log("Joined voice channel");
+			log("Joined voice channel");
 			connection = joinVoiceChannel({
 				channelId: interaction.member.voice.channelId,
 				guildId: interaction.guildId,

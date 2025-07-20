@@ -16,10 +16,11 @@ import {
 } from "./lib/voice/session";
 import yts from "yt-search";
 import { completeUrl } from "./lib/youtube/core";
+import { log, error } from "./lib/log";
 
 if (flags.getAllFlags().length > 0) {
 	for (const flag of flags.getAllFlags()) {
-		console.log(`${flag.name} : ${flag.value ?? "(NO VALUE)"}`);
+		log(`${flag.name} : ${flag.value ?? "(NO VALUE)"}`);
 	}
 }
 
@@ -39,12 +40,12 @@ if (
 			true,
 		) === true
 	) {
-		console.log("Refreshing commands...");
+		log("Refreshing commands...");
 	} else {
-		console.log("Command files change detected, refreshing...");
+		log("Command files change detected, refreshing...");
 	}
 	await registerCommands(manager.getAllCommands());
-	console.log("Commands registered successfully");
+	log("Commands registered successfully");
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -54,9 +55,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 		}
 		const manager = getSessionManager(interaction.guildId);
 		if (!manager) {
-			console.error(
-				`No session manager found for guild ${interaction.guildId}`,
-			);
+			error(`No session manager found for guild ${interaction.guildId}`);
 			return await interaction.update({ withResponse: false });
 		}
 		if (manager.preparingResources) {
@@ -199,31 +198,31 @@ client.on(Events.InteractionCreate, async (interaction) => {
 		});
 	}
 	Promise.try(() => command.execute(interaction)).catch((error) => {
-		console.error("Error executing command:", error);
+		error("Error executing command:", error);
 		interaction
 			.reply({
 				content: "There was an error while executing this command.",
 				flags: [MessageFlags.Ephemeral],
 			})
-			.catch(() => console.error("Failed to send error message"));
+			.catch(() => error("Failed to send error message"));
 	});
 });
 
 client.on(Events.ClientReady, () => {
-	console.log("Bot started");
+	log("Bot started");
 });
 
 client.login(DEV ? DEV_TOKEN : TOKEN);
 
 process.on("uncaughtException", (err) => {
-	console.error("Uncaught Exception:", err);
+	error("Uncaught Exception:", err);
 });
 process.on("unhandledRejection", (err) => {
-	console.error("Unhandled Rejection:", err);
+	error("Unhandled Rejection:", err);
 });
 
 process.on("SIGINT", () => {
-	console.log("Type /exit to exit");
+	log("Type /exit to exit");
 });
 
 process.stdin.on("data", async (data) => {
@@ -231,12 +230,12 @@ process.stdin.on("data", async (data) => {
 	const input = textDecoder.decode(data).trim();
 	switch (input) {
 		case "/exit":
-			console.log("Exiting...");
+			log("Exiting...");
 			await client.destroy();
-			console.log("Awaiting all downloads to finish...");
+			log("Awaiting all downloads to finish...");
 			await Promise.all(audioPromiseQueue);
-			console.log("All downloads finished.");
-			console.log("Goodbye!");
+			log("All downloads finished.");
+			log("Goodbye!");
 			process.exit(0);
 			break;
 	}
