@@ -77,7 +77,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 						flags: [MessageFlags.Ephemeral],
 					});
 				}
-				if (await manager.playLastClip()) {
+				if (manager.playLastClip()) {
 					return await interaction.reply({
 						content: `Playing the last played clip (${manager.clipNumber - manager.currentQueue.length}/${manager.clipNumber})`,
 						components: [
@@ -91,7 +91,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 				break;
 			}
 			case ButtonIds.NextClip: {
-				if (await manager.playNextClip()) {
+				if (manager.playNextClip()) {
 					return await interaction.reply({
 						content: `Playing the next clip (${manager.clipNumber - manager.currentQueue.length}/${manager.clipNumber})`,
 						components: [
@@ -128,7 +128,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 				break;
 			}
 			case ButtonIds.Replay: {
-				await manager.playCurrentClip();
+				manager.playCurrentClip();
 				return await interaction.reply({
 					content: `Replaying the last played clip (${manager.clipNumber - manager.currentQueue.length}/${manager.clipNumber})`,
 					components: [
@@ -157,7 +157,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 						}),
 					],
 				});
-				await manager.playCurrentClip();
+				manager.playCurrentClip();
 				break;
 			}
 			case ButtonIds.Skip: {

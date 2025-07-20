@@ -22,7 +22,7 @@ export default {
 			});
 		}
 		await interaction.deferReply();
-		if (await manager.playCurrentClip()) {
+		if (manager.playCurrentClip()) {
 			return interaction.editReply({
 				content: "Replaying the last played clip.",
 				components: [

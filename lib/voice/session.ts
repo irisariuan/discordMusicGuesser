@@ -23,6 +23,7 @@ export class SessionManager {
 	currentQueue: PlayingResource[];
 	currentItem: PlayingResource | null;
 	currentResource: AudioResource | null;
+	currentSongBuffer: Buffer | null;
 	audioPlayer: AudioPlayer;
 	connection: VoiceConnection;
 
@@ -43,10 +44,13 @@ export class SessionManager {
 		this.connection = subscription.connection;
 		this.queue = queue;
 		this.fixedQueue = [...queue];
+
 		this.currentItem = null;
 		this.currentResource = null;
 		this.currentQueue = [];
+		this.currentSongBuffer = null;
 		this.currentPlayedItems = [];
+
 		this.clipLength = clipLength;
 		this.clipNumber = clipNumber;
 		this.preparingResources = false;
@@ -85,7 +89,7 @@ export class SessionManager {
 		this.preparingResources = true;
 		this.currentPlayedItems = [];
 		await checkFolderSize();
-		const resources = await prepareRandomClips({
+		const clips = await prepareRandomClips({
 			id: picked,
 			clipLength: this.clipLength,
 			clipNumbers: this.clipNumber,
@@ -93,7 +97,7 @@ export class SessionManager {
 			error(err);
 			return null;
 		});
-		if (!resources) {
+		if (!clips) {
 			if (stack >= maxStack) {
 				throw new Error(
 					`Failed to prepare resources for ${picked} after ${maxStack} attempts.`,
@@ -101,6 +105,8 @@ export class SessionManager {
 			}
 			return await this.nextSong(shuffle, stack + 1, maxStack);
 		}
+		const { resources, buffer } = clips;
+		this.currentSongBuffer = buffer;
 		const [firstResource, ...remainResources] = shuffle
 			? shuffleArray(resources)
 			: resources;
@@ -117,19 +123,25 @@ export class SessionManager {
 		this.audioPlayer.play(this.currentResource);
 	}
 
-	async playCurrentClip() {
+	playCurrentFullSong() {
+		if (!this.currentItem || !this.currentSongBuffer) return null;
+		this.play(this.currentSongBuffer);
+		return this.currentItem;
+	}
+
+	playCurrentClip() {
 		if (!this.currentItem) return null;
 		this.play(this.currentItem.buffer);
 		return this.currentItem;
 	}
 
-	async playNextClip() {
+	playNextClip() {
 		const clip = this.nextClip();
 		if (!clip) return null;
 		this.play(clip.buffer);
 		return clip;
 	}
-	async playLastClip() {
+	playLastClip() {
 		if (this.currentPlayedItems.length === 0 || !this.currentItem)
 			return null;
 		const clip = this.currentPlayedItems.pop();

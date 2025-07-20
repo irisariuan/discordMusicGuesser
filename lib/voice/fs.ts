@@ -12,6 +12,7 @@ import { doubleDash, singleDash } from "../env/flag";
 import { completeUrl } from "../youtube/core";
 
 export const audioPromiseQueue: Promise<void>[] = [];
+export const downloadFolderPath = join(process.cwd(), "downloads");
 
 const showLog = flags.getFlagValue(
 	[singleDash("D"), singleDash("B"), doubleDash("debug")],
@@ -205,23 +206,27 @@ export function getMetadata(source: Readable): Promise<VideoMetadata> {
 }
 
 export async function checkFolderSize() {
-	const { size } = await stat(join(process.cwd(), "downloads"));
-	if (size > 100 * 1024 * 1024) {
-		// 100 MB
+	const { size } = await stat(downloadFolderPath);
+	console.log(size);
+	// 100 MB
+	if (size > 100) {
 		important("Downloads folder size exceeds 100 MB, cleaning up...");
-		const files = await readdir(join(process.cwd(), "downloads"));
+		const files = await readdir(downloadFolderPath);
+		let counter = 0;
 		for (const file of files) {
-			const filePath = join(process.cwd(), "downloads", file);
+			counter++;
+			const filePath = join(downloadFolderPath, file);
 			await unlink(filePath);
 			important(`Deleted: ${filePath}`);
-			const { size } = await stat(join(process.cwd(), "downloads"));
-			if (size <= 30 * 1024 * 1024) {
+			const { size } = await stat(downloadFolderPath);
+			if (size <= 30) {
 				// 30 MB
 				important(
 					"Downloads folder size is now below 30 MB, stopping cleanup.",
 				);
-				return;
+				return counter;
 			}
 		}
 	}
+	return 0;
 }

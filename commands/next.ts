@@ -33,7 +33,7 @@ export default {
 
 		await interaction.deferReply();
 
-		if (!skip && (await manager.playNextClip())) {
+		if (!skip && manager.playNextClip()) {
 			return interaction.editReply({
 				content: `Playing clip (${manager.clipNumber - manager.currentQueue.length}/${manager.clipNumber})`,
 				components: [
@@ -70,6 +70,6 @@ export default {
 			});
 			return destroySessionManager(interaction.guildId);
 		}
-		await manager.playCurrentClip();
+		manager.playCurrentClip();
 	},
 } as BasicCommandFile;

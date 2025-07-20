@@ -42,9 +42,11 @@ export default {
 			...shuffleArray(manager.fixedQueue).slice(0, count),
 			manager.currentItem.id,
 		]);
-		const searchResults = await Promise.all(
-			searchingIds.map((v) => yts({ videoId: v })),
-		);
+		const searchResults = (
+			await Promise.all(
+				searchingIds.map((v) => yts({ videoId: v }).catch(() => null)),
+			)
+		).filter((v) => v !== null);
 		const hints = searchResults.map(
 			(video) =>
 				`**${video.title}** by *${video.author.name}* (${video.url})`,

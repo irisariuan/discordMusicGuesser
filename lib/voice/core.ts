@@ -24,7 +24,7 @@ export async function prepareRandomClips({
 	id: string;
 	clipLength?: number;
 	clipNumbers?: number;
-}): Promise<PlayingResource[]> {
+}): Promise<{ resources: PlayingResource[]; buffer: Buffer }> {
 	const buffer = await getVideo(id);
 	const metadata = await getMetadata(Readable.from(buffer));
 	const totalDuration = metadata.format.duration;
@@ -62,20 +62,23 @@ export async function prepareRandomClips({
 				: [startTime, endTime],
 		);
 	}
-	return Promise.all(
-		timemarks.map(
-			async ([startTime, endTime]) =>
-				({
-					buffer: await clipAudio(Readable.from(buffer), [
-						startTime,
-						endTime,
-					]).buffer,
-					duration: [startTime, endTime],
-					id,
-					totalDuration,
-				}) as PlayingResource,
+	return {
+		buffer,
+		resources: await Promise.all(
+			timemarks.map(
+				async ([startTime, endTime]) =>
+					({
+						buffer: await clipAudio(Readable.from(buffer), [
+							startTime,
+							endTime,
+						]).buffer,
+						duration: [startTime, endTime],
+						id,
+						totalDuration,
+					}) as PlayingResource,
+			),
 		),
-	);
+	};
 }
 
 export function prepareAudioResource(buffer: Buffer) {

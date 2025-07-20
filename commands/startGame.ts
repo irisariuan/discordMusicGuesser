@@ -117,7 +117,7 @@ export default {
 			content: `Game started with ${videos.length} songs from the playlist!`,
 		});
 		await manager.nextSong();
-		await manager.playCurrentClip();
+		manager.playCurrentClip();
 		await interaction.followUp({
 			content: `Playing clip (1/${manager.clipNumber})`,
 			components: [
