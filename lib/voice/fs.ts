@@ -208,7 +208,7 @@ export function getMetadata(source: Readable): Promise<VideoMetadata> {
 export async function checkFolderSize() {
 	const { size } = await stat(downloadFolderPath);
 	// 100 MB
-	if (size > 100) {
+	if (size > 150) {
 		important("Downloads folder size exceeds 100 MB, cleaning up...");
 		const files = await readdir(downloadFolderPath);
 		let counter = 0;
@@ -218,7 +218,7 @@ export async function checkFolderSize() {
 			await unlink(filePath);
 			log(`Deleted: ${filePath}`);
 			const { size } = await stat(downloadFolderPath);
-			if (size <= 30) {
+			if (size <= 90) {
 				// 30 MB
 				important(
 					"Downloads folder size is now below 30 MB, stopping cleanup.",
