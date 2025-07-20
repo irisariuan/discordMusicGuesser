@@ -13,7 +13,7 @@ export default {
 				.setName("count")
 				.setDescription("Number of hints to provide")
 				.setRequired(false)
-				.setMinValue(1)
+				.setMinValue(2)
 				.setMaxValue(5),
 		),
 	execute: async (interaction) => {
