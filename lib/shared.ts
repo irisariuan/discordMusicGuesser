@@ -10,6 +10,6 @@ export const client = new Client({
 		IntentsBitField.Flags.GuildMessages,
 	],
 });
-export const manager = await createCommandManager();
+export const manager = createCommandManager();
 export const flags = getFlags();
 export const queueManagers = new Map<string, SessionManager>();

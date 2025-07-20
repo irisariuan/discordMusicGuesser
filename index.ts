@@ -18,35 +18,38 @@ import yts from "yt-search";
 import { completeUrl } from "./lib/youtube/core";
 import { log, error, important } from "./lib/log";
 
-if (flags.getAllFlags().length > 0) {
-	for (const flag of flags.getAllFlags()) {
-		log(`${flag.name} : ${flag.value ?? "(NO VALUE)"}`);
+(async () => {
+	if (flags.getAllFlags().length > 0) {
+		for (const flag of flags.getAllFlags()) {
+			log(`${flag.name} : ${flag.value ?? "(NO VALUE)"}`);
+		}
 	}
-}
 
-if (
-	!compareArraysContent(
-		(await getAllRegisteredCommandNames()) ?? [],
-		manager.getAllCommandNames(),
-	) ||
-	flags.getFlagValue(
-		[doubleDash("refreshCommands"), singleDash("R")],
-		true,
-	) === true
-) {
 	if (
+		!compareArraysContent(
+			(await getAllRegisteredCommandNames()) ?? [],
+			(await manager).getAllCommandNames(),
+		) ||
 		flags.getFlagValue(
 			[doubleDash("refreshCommands"), singleDash("R")],
 			true,
 		) === true
 	) {
-		important("Refreshing commands...");
-	} else {
-		important("Command files change detected, refreshing...");
+		if (
+			flags.getFlagValue(
+				[doubleDash("refreshCommands"), singleDash("R")],
+				true,
+			) === true
+		) {
+			important("Refreshing commands...");
+		} else {
+			important("Command files change detected, refreshing...");
+		}
+		await registerCommands((await manager).getAllCommands());
+		important("Commands registered successfully");
 	}
-	await registerCommands(manager.getAllCommands());
-	important("Commands registered successfully");
-}
+	client.login(DEV ? DEV_TOKEN : TOKEN);
+})();
 
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (interaction.isButton()) {
@@ -190,7 +193,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 		}
 	}
 	if (!interaction.isChatInputCommand()) return;
-	const command = manager.getCommand(interaction.commandName);
+	const command = (await manager).getCommand(interaction.commandName);
 	if (!command) {
 		return await interaction.reply({
 			content: "This command does not exist.",
@@ -211,8 +214,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.on(Events.ClientReady, () => {
 	important("Bot started");
 });
-
-client.login(DEV ? DEV_TOKEN : TOKEN);
 
 process.on("uncaughtException", (err) => {
 	error("Uncaught Exception:", err);

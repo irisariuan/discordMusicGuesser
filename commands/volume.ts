@@ -1,5 +1,5 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
-import type { BasicCommandFile } from "../dist/lib/commands/type";
+import type { BasicCommandFile } from "../lib/commands/type";
 import { getSessionManager } from "../lib/voice/session";
 
 export default {
