@@ -9,11 +9,14 @@ export async function createCommandManager() {
 
 export class CommandManager {
 	private commands: CommandFile[];
+	readonly compiled: boolean;
+
 	constructor() {
 		this.commands = [];
+		this.compiled = process.argv[1]?.endsWith(".js");
 	}
 	async load() {
-		this.commands = await loadCommands();
+		this.commands = await loadCommands(this.compiled);
 	}
 	getCommand(name: string) {
 		return (

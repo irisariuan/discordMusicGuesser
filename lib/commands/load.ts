@@ -2,12 +2,12 @@ import { glob } from "glob";
 import { join } from "path";
 import type { BasicCommandFile, CommandFile } from "./type";
 
-export function listCommandFiles() {
-	return glob("commands/**/*.(ts|js)");
+export function listCommandFiles(compiled: boolean) {
+	return glob(compiled ? "dist/commands/**/*.js" : "commands/**/*.ts");
 }
 
-export async function loadCommands(): Promise<CommandFile[]> {
-	const files = await listCommandFiles();
+export async function loadCommands(compiled: boolean): Promise<CommandFile[]> {
+	const files = await listCommandFiles(compiled);
 	const commands: CommandFile[] = [];
 	for (const file of files) {
 		const command: { default: BasicCommandFile } | null = await import(

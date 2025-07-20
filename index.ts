@@ -45,7 +45,9 @@ import { log, error, important } from "./lib/log";
 		} else {
 			important("Command files change detected, refreshing...");
 		}
-		await registerCommands((await manager).getAllCommands());
+		const allCommands = (await manager).getAllCommands();
+		important("Registering", allCommands.map((v) => v.name).join());
+		await registerCommands(allCommands);
 		important("Commands registered successfully");
 	}
 	client.login(DEV ? DEV_TOKEN : TOKEN);
