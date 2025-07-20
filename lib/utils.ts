@@ -1,3 +1,6 @@
+import { VideoMetadataResult } from "yt-search";
+import { SessionManager } from "./voice/session";
+
 export function compareArraysContent(arr1: string[], arr2: string[]) {
 	if (arr1.length !== arr2.length) {
 		return false;
@@ -82,4 +85,21 @@ export function readableTimestamp(duration: number) {
 	parts.push(seconds.toString().padStart(2, "0"));
 
 	return parts.join(":").concat(".", miliseconds.toString().padEnd(2, "0"));
+}
+
+export function readableSong(
+	song: VideoMetadataResult,
+	manager: SessionManager,
+) {
+	if (!manager.currentItem) {
+		return "No song is currently playing.";
+	}
+	return `Current song is **${song.title}** by *${song.author.name}* (${song.url})\nClip timestamps are ${manager.currentQueue
+		.concat(...manager.currentPlayedItems, manager.currentItem)
+		.sort((a, b) => a.duration[0] - b.duration[0])
+		.map(
+			(c) =>
+				`\`${readableTimestamp(c.duration[0])} - ${readableTimestamp(c.duration[1])}\``,
+		)
+		.join(", ")}`;
 }

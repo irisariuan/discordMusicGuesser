@@ -6,7 +6,7 @@ import {
 import { DEV, DEV_TOKEN, TOKEN } from "./lib/env/env";
 import { doubleDash, singleDash } from "./lib/env/flag";
 import { client, flags, manager } from "./lib/shared";
-import { compareArraysContent } from "./lib/utils";
+import { compareArraysContent, readableSong } from "./lib/utils";
 import { audioPromiseQueue } from "./lib/voice/fs";
 import { ButtonIds, createButtons } from "./lib/action";
 import {
@@ -116,7 +116,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 					}
 
 					return await interaction.editReply({
-						content: `Last song is ${lastMeta.title} (${completeUrl(lastId)})`,
+						content: readableSong(lastMeta, manager),
 						components: [
 							createButtons({
 								lastClip: manager.currentPlayedItems.length > 0,
@@ -175,7 +175,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 					}
 
 					await interaction.editReply({
-						content: `Last song is ${lastMeta.title} (${completeUrl(lastId)})`,
+						content: readableSong(lastMeta, manager),
 						components: [
 							createButtons({
 								lastClip: false,

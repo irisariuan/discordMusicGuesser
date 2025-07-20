@@ -4,6 +4,7 @@ import { destroySessionManager, getSessionManager } from "../lib/voice/session";
 import yts from "yt-search";
 import { completeUrl } from "../lib/youtube/core";
 import { createButtons } from "../lib/action";
+import { readableSong } from "../lib/utils";
 
 export default {
 	commmandBuilder: new SlashCommandBuilder()
@@ -54,7 +55,7 @@ export default {
 			}
 
 			interaction.editReply({
-				content: `Last song is ${lastMeta.title} (${completeUrl(lastId)})`,
+				content: readableSong(lastMeta, manager),
 				components: [
 					createButtons({
 						nextSong: true,

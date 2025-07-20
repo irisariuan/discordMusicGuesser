@@ -2,7 +2,7 @@ import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { BasicCommandFile } from "../lib/commands/type";
 import { getSessionManager } from "../lib/voice/session";
 import yts from "yt-search";
-import { readableTimestamp } from "../lib/utils";
+import { readableSong, readableTimestamp } from "../lib/utils";
 
 export default {
 	commmandBuilder: new SlashCommandBuilder()
@@ -38,14 +38,7 @@ export default {
 			});
 		}
 		return interaction.editReply({
-			content: `Current song is **${currentSong.title}** by *${currentSong.author.name}* (${currentSong.url})\nClip timestamps are ${manager.currentQueue
-				.concat(...manager.currentPlayedItems, manager.currentItem)
-				.sort((a, b) => a.duration[0] - b.duration[0])
-				.map(
-					(c) =>
-						`\`${readableTimestamp(c.duration[0])} - ${readableTimestamp(c.duration[1])}\``,
-				)
-				.join(", ")}`,
+			content: readableSong(currentSong, manager),
 		});
 	},
 } as BasicCommandFile;
