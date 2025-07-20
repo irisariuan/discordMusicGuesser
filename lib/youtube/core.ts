@@ -4,12 +4,12 @@ import { error } from "../log";
 export function extractYouTubePlaylistId(url: string) {
 	if (!url) return false;
 	const regex =
-		/^(https?:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\/(playlist\?|watch\?(?:.*&)?list=)([a-zA-Z0-9_-]+)(?:&.*)?$/;
+		/^(https?:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\/(playlist\?|watch\?(?:.*&)?)(list=)([a-zA-Z0-9_-]+)(?:&.*)?$/;
 	const match = regex.exec(url);
 
-	if (match && match[5]) {
-		// match[5] corresponds to the 5th capturing group, which is the playlist ID
-		return match[5];
+	if (match && match[6]) {
+		// match[6] corresponds to the 6th capturing group, which is the playlist ID
+		return match[6];
 	}
 	return null;
 }
