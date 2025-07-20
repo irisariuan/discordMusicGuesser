@@ -17,7 +17,7 @@ export default {
 				.setMaxValue(5),
 		),
 	execute: async (interaction) => {
-		const count = (interaction.options.getInteger("count") ?? 4) - 1;
+		const count = interaction.options.getInteger("count") ?? 4;
 		if (!interaction.guildId) {
 			return interaction.reply({
 				content: "This command can only be used in a server channel.",
@@ -38,9 +38,10 @@ export default {
 			});
 		}
 		await interaction.deferReply();
-		const searchingIds = shuffleArray(manager.fixedQueue)
-			.slice(0, count)
-			.concat(manager.currentItem.id);
+		const searchingIds = shuffleArray([
+			...shuffleArray(manager.fixedQueue).slice(0, count),
+			manager.currentItem.id,
+		]);
 		const searchResults = await Promise.all(
 			searchingIds.map((v) => yts({ videoId: v })),
 		);
