@@ -16,14 +16,14 @@ export function log(...data: unknown[]) {
 	if (flags.getFlagValue([singleDash("L"), doubleDash("log")], true)) {
 		console.log(...data);
 	}
-	const logMessage = `${new Date().toISOString()} - ${data.join(" ")}\n`;
+	const logMessage = `[LOG] ${new Date().toISOString()}: ${data.join(" ")}\n`;
 	appendFile(logFilePath, logMessage).catch((err) =>
 		console.error("[UNLOGGED] Failed to write to log file:", err),
 	);
 }
 export function error(...data: unknown[]) {
 	console.error(...data);
-	const errorMessage = `${new Date().toISOString()} - ${data.join(" ")}\n`;
+	const errorMessage = `[ERR] ${new Date().toISOString()}: ${data.join(" ")}\n`;
 	appendFile(errorLogFilePath, errorMessage).catch((err) =>
 		console.error("[UNLOGGED] Failed to write to error log file:", err),
 	);
@@ -32,8 +32,20 @@ export function warn(...data: unknown[]) {
 	if (!flags.getFlagValue([singleDash("N"), doubleDash("no_warn")], true)) {
 		console.warn(...data);
 	}
-	const warnMessage = `${new Date().toISOString()} - ${data.join(" ")}\n`;
+	const warnMessage = `[WARN] ${new Date().toISOString()}: ${data.join(" ")}\n`;
 	appendFile(logFilePath, warnMessage).catch((err) =>
+		console.error("[UNLOGGED] Failed to write to log file:", err),
+	);
+}
+
+export function important(...data: unknown[]) {
+	if (
+		!flags.getFlagValue([singleDash("N"), doubleDash("no_important")], true)
+	) {
+		console.log(...data);
+	}
+	const importantMessage = `[IMP] ${new Date().toISOString()}: ${data.join(" ")}\n`;
+	appendFile(logFilePath, importantMessage).catch((err) =>
 		console.error("[UNLOGGED] Failed to write to log file:", err),
 	);
 }

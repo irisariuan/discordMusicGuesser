@@ -16,7 +16,7 @@ import {
 } from "./lib/voice/session";
 import yts from "yt-search";
 import { completeUrl } from "./lib/youtube/core";
-import { log, error } from "./lib/log";
+import { log, error, important } from "./lib/log";
 
 if (flags.getAllFlags().length > 0) {
 	for (const flag of flags.getAllFlags()) {
@@ -40,12 +40,12 @@ if (
 			true,
 		) === true
 	) {
-		log("Refreshing commands...");
+		important("Refreshing commands...");
 	} else {
-		log("Command files change detected, refreshing...");
+		important("Command files change detected, refreshing...");
 	}
 	await registerCommands(manager.getAllCommands());
-	log("Commands registered successfully");
+	important("Commands registered successfully");
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -209,7 +209,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.on(Events.ClientReady, () => {
-	log("Bot started");
+	important("Bot started");
 });
 
 client.login(DEV ? DEV_TOKEN : TOKEN);
@@ -230,11 +230,11 @@ process.stdin.on("data", async (data) => {
 	const input = textDecoder.decode(data).trim();
 	switch (input) {
 		case "/exit":
-			log("Exiting...");
+			important("Exiting...");
 			await client.destroy();
-			log("Awaiting all downloads to finish...");
+			important("Awaiting all downloads to finish...");
 			await Promise.all(audioPromiseQueue);
-			log("All downloads finished.");
+			important("All downloads finished.");
 			log("Goodbye!");
 			process.exit(0);
 			break;

@@ -1,5 +1,5 @@
 import z from "zod";
-import { log, error } from "../log";
+import { log, error, warn } from "../log";
 
 export enum SegmentCategory {
 	Sponsor = "sponsor",
@@ -37,7 +37,7 @@ export async function getSegments(
 	);
 	const res = await fetch(url);
 	if (!res.ok) {
-		log(
+		warn(
 			`Failed to fetch ${id} with categories ${categories.join()}, Text:`,
 			await res.text(),
 		);
