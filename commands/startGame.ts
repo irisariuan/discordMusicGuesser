@@ -6,7 +6,7 @@ import { queueManagers } from "../lib/shared";
 import {
 	extractYouTubePlaylistId,
 	getVideoIdsFromPlaylist,
-} from "../lib/youtube";
+} from "../lib/youtube/core";
 import { createButtons } from "../lib/action";
 
 export default {

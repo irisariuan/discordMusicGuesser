@@ -7,8 +7,8 @@ import {
 } from "@discordjs/voice";
 import { queueManagers as sessionManagers } from "../shared";
 import {
-	prepareClipsResourceById,
-	prepareResource,
+	prepareRandomClips,
+	prepareAudioResource,
 	type PlayingResource,
 } from "./core";
 import { AudioResource } from "@discordjs/voice";
@@ -79,7 +79,7 @@ export class SessionManager {
 		console.log(`Picked ${picked}`);
 		this.preparingResources = true;
 		this.currentPlayedItems = [];
-		const resources = await prepareClipsResourceById({
+		const resources = await prepareRandomClips({
 			id: picked,
 			clipLength: this.clipLength,
 			clipNumbers: this.clipNumber,
@@ -106,7 +106,7 @@ export class SessionManager {
 	}
 
 	play(buffer: Buffer) {
-		this.currentResource = prepareResource(buffer);
+		this.currentResource = prepareAudioResource(buffer);
 		this.currentResource.volume?.setVolume(this.volume);
 		this.audioPlayer.play(this.currentResource);
 	}

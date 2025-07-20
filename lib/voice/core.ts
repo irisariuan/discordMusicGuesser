@@ -1,7 +1,13 @@
-import { AudioResource, createAudioResource } from "@discordjs/voice";
+import { createAudioResource } from "@discordjs/voice";
 import { Readable } from "stream";
-import { clipAudio, getMetadata, getVideo } from "./fs";
 import { randomFloat, roundTo } from "../utils";
+import { clipAudio, getMetadata, getVideo } from "./fs";
+import {
+	calculateCutDuration,
+	calculateRealTimemark,
+	calculateSegmentDurations,
+	getSegments,
+} from "../youtube/segments";
 
 export interface PlayingResource {
 	buffer: Buffer;
@@ -10,7 +16,7 @@ export interface PlayingResource {
 	totalDuration: number;
 }
 
-export async function prepareClipsResourceById({
+export async function prepareRandomClips({
 	id,
 	clipLength = 5,
 	clipNumbers = 3,
@@ -21,37 +27,61 @@ export async function prepareClipsResourceById({
 	clipNumbers?: number;
 	showLog?: boolean;
 }): Promise<PlayingResource[]> {
-	const awaitedBuffer = await getVideo(id, showLog);
-	const metadata = await getMetadata(Readable.from(awaitedBuffer), showLog);
+	const buffer = await getVideo(id, showLog);
+	const metadata = await getMetadata(Readable.from(buffer), showLog);
 	const totalDuration = metadata.format.duration;
-	const resources: PlayingResource[] = [];
+
+	const segments = await getSegments(id);
+	const segmentTimemarks = segments
+		? calculateSegmentDurations(segments, totalDuration)
+		: null;
+	const clippedDuration = segments
+		? calculateCutDuration(
+				totalDuration,
+				segments.map((v) => v.segment),
+			)
+		: totalDuration;
+
+	const timemarks: [number, number][] = [];
 	for (let i = 0; i < clipNumbers; i++) {
-		const minStartTime = (totalDuration / clipNumbers) * i;
+		const minStartTime = (clippedDuration / clipNumbers) * i;
 		const maxEndTime =
-			(totalDuration / clipNumbers) * (i + 1) - clipLength < minStartTime
-				? (totalDuration / clipNumbers) * (i + 1)
-				: (totalDuration / clipNumbers) * (i + 1) - clipLength;
+			(clippedDuration / clipNumbers) * (i + 1) - clipLength <
+			minStartTime
+				? (clippedDuration / clipNumbers) * (i + 1)
+				: (clippedDuration / clipNumbers) * (i + 1) - clipLength;
 		const startTime = roundTo(randomFloat(minStartTime, maxEndTime));
 		const endTime = roundTo(
-			Math.min(startTime + clipLength, totalDuration),
+			Math.min(startTime + clipLength, clippedDuration),
 		);
-		console.log("Clipping", startTime, endTime);
-		const { buffer: clipBuffer } = clipAudio(
-			Readable.from(awaitedBuffer),
-			[startTime, endTime],
-			showLog,
+		
+		timemarks.push(
+			segmentTimemarks
+				? [
+						calculateRealTimemark(startTime, segmentTimemarks),
+						calculateRealTimemark(endTime, segmentTimemarks),
+					]
+				: [startTime, endTime],
 		);
-		resources.push({
-			duration: [startTime, endTime],
-			totalDuration,
-			buffer: await clipBuffer,
-			id,
-		});
 	}
-	return resources;
+	return Promise.all(
+		timemarks.map(
+			async ([startTime, endTime]) =>
+				({
+					buffer: await clipAudio(
+						Readable.from(buffer),
+						[startTime, endTime],
+						showLog,
+					).buffer,
+					duration: [startTime, endTime],
+					id,
+					totalDuration,
+				}) as PlayingResource,
+		),
+	);
 }
 
-export function prepareResource(buffer: Buffer) {
+export function prepareAudioResource(buffer: Buffer) {
 	return createAudioResource(Readable.from(buffer), {
 		inlineVolume: true,
 	});

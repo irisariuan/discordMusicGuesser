@@ -104,6 +104,10 @@ export function clipAudio(
 	period: [number, number],
 	showLog = false,
 ) {
+	if (period[0] < 0 || period[1] < 0) {
+		throw new Error("Period start and end must be non-negative.");
+	}
+
 	const args = [
 		"-i",
 		"pipe:0",

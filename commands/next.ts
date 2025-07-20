@@ -2,7 +2,7 @@ import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import type { BasicCommandFile } from "../lib/commands/type";
 import { destroySessionManager, getSessionManager } from "../lib/voice/session";
 import yts from "yt-search";
-import { completeUrl } from "../lib/youtube";
+import { completeUrl } from "../lib/youtube/core";
 import { createButtons } from "../lib/action";
 
 export default {
