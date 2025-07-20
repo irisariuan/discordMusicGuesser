@@ -14,9 +14,11 @@ import {
 import { AudioResource } from "@discordjs/voice";
 import { shuffleArray } from "../utils";
 import { log, error } from "console";
+import { checkFolderSize } from "./fs";
 
 export class SessionManager {
 	queue: string[];
+	fixedQueue: string[];
 	currentPlayedItems: PlayingResource[];
 	currentQueue: PlayingResource[];
 	currentItem: PlayingResource | null;
@@ -40,6 +42,7 @@ export class SessionManager {
 		this.audioPlayer = subscription.player;
 		this.connection = subscription.connection;
 		this.queue = queue;
+		this.fixedQueue = [...queue];
 		this.currentItem = null;
 		this.currentResource = null;
 		this.currentQueue = [];
@@ -51,6 +54,7 @@ export class SessionManager {
 	}
 	addToQueue(videoId: string): void {
 		this.queue.push(videoId);
+		if (!this.fixedQueue.includes(videoId)) this.fixedQueue.push(videoId);
 	}
 
 	setVolume(volume: number) {
@@ -80,6 +84,7 @@ export class SessionManager {
 		log(`Picked ${picked}`);
 		this.preparingResources = true;
 		this.currentPlayedItems = [];
+		await checkFolderSize();
 		const resources = await prepareRandomClips({
 			id: picked,
 			clipLength: this.clipLength,

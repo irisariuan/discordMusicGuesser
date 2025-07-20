@@ -39,7 +39,7 @@ export default {
 					"The length of each clip in seconds (default: 2)",
 				)
 				.setRequired(false)
-				.setMinValue(0.5)
+				.setMinValue(0.1)
 				.setMaxValue(10),
 		),
 	execute: async (interaction) => {

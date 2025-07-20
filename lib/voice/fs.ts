@@ -77,7 +77,6 @@ export function download(videoId: string) {
 	});
 	const promise = pipeline(proc.stdout, writable).catch(epipeCatcher);
 	audioPromiseQueue.push(promise);
-	audioPromiseQueue.push(checkFolderSize());
 	return {
 		stdout: proc.stdout,
 		buffer: new Promise<Buffer>((resolve, reject) => {
