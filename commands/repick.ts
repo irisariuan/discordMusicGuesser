@@ -29,6 +29,7 @@ export default {
 		}
 		await interaction.deferReply();
 		if (await manager.prepareClip(manager.currentItem.id, true)) {
+			manager.playCurrentClip();
 			return interaction.editReply({
 				content: `Repicked clips`,
 				components: [
