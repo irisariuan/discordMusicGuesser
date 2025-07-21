@@ -6,8 +6,30 @@ import { createButtons } from "../lib/action";
 export default {
 	commmandBuilder: new SlashCommandBuilder()
 		.setName("repick")
-		.setDescription("Repick the clips"),
+		.setDescription("Repick the clips")
+		.addIntegerOption((option) =>
+			option
+				.setName("clipnumber")
+				.setDescription(
+					"The number of clips to play in the game (default: 3)",
+				)
+				.setRequired(false)
+				.setMinValue(1)
+				.setMaxValue(10),
+		)
+		.addNumberOption((option) =>
+			option
+				.setName("cliplength")
+				.setDescription(
+					"The length of each clip in seconds (default: 2)",
+				)
+				.setRequired(false)
+				.setMinValue(0.1)
+				.setMaxValue(10),
+		),
 	execute: async (interaction) => {
+		const clipNumber = interaction.options.getInteger("clipnumber");
+		const clipLength = interaction.options.getNumber("cliplength");
 		if (!interaction.guildId) {
 			return interaction.reply({
 				content: "This command can only be used in a server channel.",
@@ -28,10 +50,16 @@ export default {
 			});
 		}
 		await interaction.deferReply();
+		if (clipNumber) {
+			manager.clipNumber = clipNumber;
+		}
+		if (clipLength) {
+			manager.clipLength = clipLength;
+		}
 		if (await manager.prepareClip(manager.currentItem.id, true)) {
 			manager.playCurrentClip();
 			return interaction.editReply({
-				content: `Repicked clips`,
+				content: `Repicked clips (Clips: ${manager.clipNumber}, Length: ${manager.clipLength}s)`,
 				components: [
 					createButtons({ lastClip: false, nextSong: false }),
 				],
