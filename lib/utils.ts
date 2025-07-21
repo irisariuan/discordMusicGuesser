@@ -64,6 +64,7 @@ export function roundTo(num: number, decimal = 3) {
 
 export function shuffleArray<T>(array: Array<T>) {
 	const arr = [...array];
+	if (arr.length <= 1) return arr;
 	for (let i = arr.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
 		[arr[i], arr[j]] = [arr[j], arr[i]];

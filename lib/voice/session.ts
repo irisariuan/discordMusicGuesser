@@ -86,11 +86,25 @@ export class SessionManager {
 		const picked = this.queue.splice(index, 1)[0];
 		if (!picked) return null;
 		log(`Picked ${picked}`);
+		await checkFolderSize();
+		const returnedClip = await this.prepareClip(picked, shuffle);
+		if (!returnedClip) {
+			if (stack >= maxStack) {
+				throw new Error(
+					`Failed to prepare resources for ${picked} after ${maxStack} attempts.`,
+				);
+			}
+			return await this.nextSong(shuffle, stack + 1, maxStack);
+		}
+		log(`Prepared clip for ${picked}`);
+		return returnedClip;
+	}
+
+	async prepareClip(id: string, shuffle: boolean) {
 		this.preparingResources = true;
 		this.currentPlayedItems = [];
-		await checkFolderSize();
 		const clips = await prepareRandomClips({
-			id: picked,
+			id,
 			clipLength: this.clipLength,
 			clipNumbers: this.clipNumber,
 		}).catch((err) => {
@@ -98,12 +112,7 @@ export class SessionManager {
 			return null;
 		});
 		if (!clips) {
-			if (stack >= maxStack) {
-				throw new Error(
-					`Failed to prepare resources for ${picked} after ${maxStack} attempts.`,
-				);
-			}
-			return await this.nextSong(shuffle, stack + 1, maxStack);
+			return null;
 		}
 		const { resources, buffer } = clips;
 		this.currentSongBuffer = buffer;

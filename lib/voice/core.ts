@@ -18,14 +18,16 @@ export interface PlayingResource {
 
 export async function prepareRandomClips({
 	id,
+	preparedBuffer,
 	clipLength = 5,
 	clipNumbers = 3,
 }: {
 	id: string;
+	preparedBuffer?: Buffer;
 	clipLength?: number;
 	clipNumbers?: number;
 }): Promise<{ resources: PlayingResource[]; buffer: Buffer }> {
-	const buffer = await getVideo(id);
+	const buffer = preparedBuffer ?? (await getVideo(id));
 	const metadata = await getMetadata(Readable.from(buffer));
 	const totalDuration = metadata.format.duration;
 
