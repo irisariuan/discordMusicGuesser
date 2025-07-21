@@ -2,7 +2,7 @@ import yts from "yt-search";
 import { debug, error } from "../log";
 
 export function extractYouTubePlaylistId(url: string) {
-	if (!url) return false;
+	if (!url) return null;
 	const regex =
 		/^(https?:\/\/)?(www\.|m\.|music\.)?(youtube\.com|youtu\.be)\/(playlist\?|watch\?(?:.*&)?)(list=)([a-zA-Z0-9_-]+)(?:&.*)?$/;
 	const match = regex.exec(url);
