@@ -4,7 +4,7 @@ import { debug, error } from "../log";
 export function extractYouTubePlaylistId(url: string) {
 	if (!url) return false;
 	const regex =
-		/^(https?:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\/(playlist\?|watch\?(?:.*&)?)(list=)([a-zA-Z0-9_-]+)(?:&.*)?$/;
+		/^(https?:\/\/)?(www\.|m\.|music\.)?(youtube\.com|youtu\.be)\/(playlist\?|watch\?(?:.*&)?)(list=)([a-zA-Z0-9_-]+)(?:&.*)?$/;
 	const match = regex.exec(url);
 
 	if (match && match[6]) {
