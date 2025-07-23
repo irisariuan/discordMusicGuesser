@@ -104,8 +104,9 @@ process.on("SIGINT", () => {
 	log("Type /exit to exit");
 });
 
+const textDecoder = new TextDecoder();
+
 process.stdin.on("data", async (data) => {
-	const textDecoder = new TextDecoder();
 	const input = textDecoder.decode(data).trim();
 	switch (input) {
 		case "/exit": {
