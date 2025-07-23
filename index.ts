@@ -108,7 +108,7 @@ process.stdin.on("data", async (data) => {
 	const textDecoder = new TextDecoder();
 	const input = textDecoder.decode(data).trim();
 	switch (input) {
-		case "/exit":
+		case "/exit": {
 			important("Exiting...");
 			await client.destroy();
 			important("Awaiting all downloads to finish...");
@@ -117,5 +117,14 @@ process.stdin.on("data", async (data) => {
 			log("Goodbye!");
 			process.exit(0);
 			break;
+		}
+		case "/reload": {
+			important("Reloading commands...");
+			if (await (await manager).load()) {
+				important("Reloaded successfully.");
+			} else {
+				error("Failed to reload commands.");
+			}
+		}
 	}
 });

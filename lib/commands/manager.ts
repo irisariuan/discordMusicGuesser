@@ -16,7 +16,10 @@ export class CommandManager {
 		this.compiled = process.argv[1]?.endsWith(".js");
 	}
 	async load() {
-		this.commands = await loadCommands(this.compiled);
+		const newCommands = await loadCommands(this.compiled).catch(() => null)
+		if (!newCommands) return null
+		this.commands = newCommands;
+		return this.commands;
 	}
 	getCommand(name: string) {
 		return (
