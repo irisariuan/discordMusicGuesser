@@ -87,8 +87,14 @@ DEV_CLIENT_ID=your_development_client_id (optional)
 
 1. Start the bot:
 
+Bun
 ```bash
 bun run index.ts
+```
+or Node.js
+```bash
+npx tsc # Compile TypeScript files
+node dist/index.js
 ```
 
 2. Invite the bot to your Discord server with the required permissions
