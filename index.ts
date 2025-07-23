@@ -121,8 +121,11 @@ process.stdin.on("data", async (data) => {
 		}
 		case "/reload": {
 			important("Reloading commands...");
-			if (await (await manager).load()) {
-				important("Reloaded successfully.");
+			const newCommands = await (await manager).load();
+			if (newCommands) {
+				important(
+					`Reloaded successfully ${newCommands.map((v) => v.name).join(", ")} (Total: ${newCommands.length})`,
+				);
 			} else {
 				error("Failed to reload commands.");
 			}
