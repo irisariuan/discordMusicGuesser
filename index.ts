@@ -90,7 +90,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.on(Events.ClientReady, () => {
-	important("Bot started");
+	important(`Bot started as ${client.user?.tag ?? "(NULL)"}`);
 });
 
 process.on("uncaughtException", (err) => {
