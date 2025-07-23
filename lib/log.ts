@@ -44,7 +44,7 @@ export function important(...data: unknown[]) {
 	if (
 		!flags.getFlagValue([singleDash("N"), doubleDash("no_important")], true)
 	) {
-		console.log(colors.bgBlue(colors.bold(data.join(" "))));
+		console.log(colors.bold(data.join(" ")));
 	}
 	const importantMessage = `[IMP] ${new Date().toISOString()}: ${data.join(" ")}\n`;
 	appendFile(logFilePath, importantMessage).catch((err) =>
@@ -60,7 +60,7 @@ export function debug(...data: unknown[]) {
 		)
 	)
 		return;
-	console.log(...data);
+	console.log(colors.bgMagenta(data.join(" ")));
 	const debugMessage = `[DEBUG] ${new Date().toISOString()}: ${data.join(" ")}\n`;
 	appendFile(debugFilePath, debugMessage).catch((err) =>
 		console.error("[UNLOGGED] Failed to write to log file:", err),
