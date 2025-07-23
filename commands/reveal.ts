@@ -1,6 +1,6 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { BasicCommandFile } from "../lib/commands/type";
-import { readableSong } from "../lib/utils";
+import { readableSong } from "../lib/utils/format";
 import { getSessionManager } from "../lib/voice/session";
 import { searchVideo } from "../lib/youtube/core";
 

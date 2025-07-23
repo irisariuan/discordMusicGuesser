@@ -1,7 +1,7 @@
 import { ButtonInteraction, MessageFlags } from "discord.js";
 import { ButtonIds, createButtons } from "./action";
 import { error } from "./log";
-import { readableSong } from "./utils";
+import { readableSong } from "./utils/format";
 import {
 	hasSessionManager,
 	getSessionManager,
