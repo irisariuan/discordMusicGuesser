@@ -1,10 +1,9 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
-import type { BasicCommandFile } from "../lib/commands/type";
-import { destroySessionManager, getSessionManager } from "../lib/voice/session";
-import yts from "yt-search";
-import { completeUrl } from "../lib/youtube/core";
 import { createButtons } from "../lib/action";
+import type { BasicCommandFile } from "../lib/commands/type";
 import { readableSong } from "../lib/utils";
+import { destroySessionManager, getSessionManager } from "../lib/voice/session";
+import { searchVideo } from "../lib/youtube/core";
 
 export default {
 	commmandBuilder: new SlashCommandBuilder()
@@ -47,7 +46,7 @@ export default {
 		}
 		if (manager.currentItem) {
 			const lastId = manager.currentItem.id;
-			const lastMeta = await yts({ videoId: lastId }).catch(() => null);
+			const lastMeta = await searchVideo(lastId);
 			if (!lastMeta) {
 				return interaction.editReply({
 					content: "Failed to fetch metadata for the last song.",

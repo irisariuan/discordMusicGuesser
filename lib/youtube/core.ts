@@ -1,5 +1,8 @@
 import yts from "yt-search";
-import { debug, error } from "../log";
+import { error, warn } from "../log";
+import NodeCache from "node-cache";
+
+const searchCache = new NodeCache({ stdTTL: 60 * 60 * 24 });
 
 export function extractYouTubePlaylistId(url: string) {
 	if (!url) return null;
@@ -15,15 +18,50 @@ export function extractYouTubePlaylistId(url: string) {
 }
 
 export async function getVideoIdsFromPlaylist(playlistId: string) {
-	try {
-		const result = await yts({ listId: playlistId });
-		return result.videos.map((v) => v.videoId);
-	} catch (err) {
-		error("Error fetching YouTube playlist info:", err);
+	const result = await searchPlaylist(playlistId);
+	if (!result) {
+		error("Error fetching YouTube playlist info");
 		return null;
 	}
+	return result.videos.map((v) => v.videoId);
 }
 
 export function completeUrl(videoId: string) {
 	return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+export async function searchVideo(
+	videoId: string,
+): Promise<yts.VideoMetadataResult | null> {
+	try {
+		const cached = searchCache.get(videoId);
+		if (cached) {
+			return cached as yts.VideoMetadataResult;
+		}
+		const fetched = await yts({ videoId });
+		searchCache.set(videoId, fetched);
+		return fetched;
+	} catch {
+		return null;
+	}
+}
+
+// Playlist has limit of 100 videos per request, need to change library if wanted to fetch full playlist
+export async function searchPlaylist(playlistId: string) {
+	try {
+		const cached = searchCache.get(playlistId);
+		if (cached) {
+			return cached as yts.PlaylistMetadataResult;
+		}
+		const fetched = await yts({ listId: playlistId });
+		if (fetched.videos.length !== fetched.size) {
+			warn(
+				`Fetched videos length does not match its size, ${fetched.videos.length} (Response length) != ${fetched.size} (Size)`,
+			);
+		}
+		searchCache.set(playlistId, fetched);
+		return fetched;
+	} catch {
+		return null;
+	}
 }

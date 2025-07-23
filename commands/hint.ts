@@ -1,8 +1,8 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { BasicCommandFile } from "../lib/commands/type";
-import { getSessionManager } from "../lib/voice/session";
 import { shuffleArray } from "../lib/utils";
-import yts from "yt-search";
+import { getSessionManager } from "../lib/voice/session";
+import { searchVideo } from "../lib/youtube/core";
 
 export default {
 	commmandBuilder: new SlashCommandBuilder()
@@ -43,9 +43,7 @@ export default {
 			manager.currentItem.id,
 		]);
 		const searchResults = (
-			await Promise.all(
-				searchingIds.map((v) => yts({ videoId: v }).catch(() => null)),
-			)
+			await Promise.all(searchingIds.map(searchVideo))
 		).filter((v) => v !== null);
 		const hints = searchResults.map(
 			(video) =>

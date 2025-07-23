@@ -1,22 +1,21 @@
 import { Events, MessageFlags } from "discord.js";
+import { ButtonIds, createButtons } from "./lib/action";
 import {
 	getAllRegisteredCommandNames,
 	registerCommands,
 } from "./lib/commands/register";
 import { DEV, DEV_TOKEN, TOKEN } from "./lib/env/env";
 import { doubleDash, singleDash } from "./lib/env/flag";
+import { error, important, log } from "./lib/log";
 import { client, flags, manager } from "./lib/shared";
 import { compareArraysContent, readableSong } from "./lib/utils";
 import { audioPromiseQueue } from "./lib/voice/fs";
-import { ButtonIds, createButtons } from "./lib/action";
 import {
 	destroySessionManager,
 	getSessionManager,
 	hasSessionManager,
 } from "./lib/voice/session";
-import yts from "yt-search";
-import { completeUrl } from "./lib/youtube/core";
-import { log, error, important } from "./lib/log";
+import { searchVideo } from "./lib/youtube/core";
 
 (async () => {
 	if (flags.getAllFlags().length > 0) {
@@ -105,9 +104,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 				await interaction.deferReply();
 				if (manager.currentItem) {
 					const lastId = manager.currentItem.id;
-					const lastMeta = await yts({ videoId: lastId }).catch(
-						() => null,
-					);
+					const lastMeta = await searchVideo(lastId);
 					if (!lastMeta) {
 						return await interaction.editReply({
 							content:
@@ -164,9 +161,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 				if (manager.currentItem) {
 					await interaction.deferReply();
 					const lastId = manager.currentItem.id;
-					const lastMeta = await yts({ videoId: lastId }).catch(
-						() => null,
-					);
+					const lastMeta = await searchVideo(lastId);
 					if (!lastMeta) {
 						return await interaction.editReply({
 							content:

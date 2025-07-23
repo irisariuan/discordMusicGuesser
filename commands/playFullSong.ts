@@ -1,7 +1,7 @@
-import { SlashCommandBuilder, MessageFlags } from "discord.js";
+import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { BasicCommandFile } from "../lib/commands/type";
 import { getSessionManager } from "../lib/voice/session";
-import yts from "yt-search";
+import { searchVideo } from "../lib/youtube/core";
 
 export default {
 	commmandBuilder: new SlashCommandBuilder()
@@ -29,7 +29,7 @@ export default {
 		}
 		await interaction.deferReply();
 		if (manager.playCurrentFullSong()) {
-			const currentSong = await yts({ videoId: manager.currentItem.id }).catch(() => null);
+			const currentSong = await searchVideo(manager.currentItem.id);
 			if (!currentSong) {
 				return interaction.editReply({
 					content: "Failed to fetch metadata for the current song.",
