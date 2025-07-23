@@ -1,21 +1,15 @@
 import { Events, MessageFlags } from "discord.js";
-import { ButtonIds, createButtons } from "./lib/action";
 import {
 	getAllRegisteredCommandNames,
 	registerCommands,
 } from "./lib/commands/register";
 import { DEV, DEV_TOKEN, TOKEN } from "./lib/env/env";
 import { doubleDash, singleDash } from "./lib/env/flag";
+import buttonInteractionHandler from "./lib/interactionHandler";
 import { error, important, log } from "./lib/log";
 import { client, flags, manager } from "./lib/shared";
-import { compareArraysContent, readableSong } from "./lib/utils";
+import { compareArraysContent } from "./lib/utils";
 import { audioPromiseQueue } from "./lib/voice/fs";
-import {
-	destroySessionManager,
-	getSessionManager,
-	hasSessionManager,
-} from "./lib/voice/session";
-import { searchVideo } from "./lib/youtube/core";
 
 (async () => {
 	if (flags.getAllFlags().length > 0) {
@@ -23,189 +17,76 @@ import { searchVideo } from "./lib/youtube/core";
 			log(`${flag.name} : ${flag.value ?? "(NO VALUE)"}`);
 		}
 	}
-
-	if (
-		!compareArraysContent(
-			(await getAllRegisteredCommandNames()) ?? [],
-			(await manager).getAllCommandNames(),
-		) ||
+	const forceRefreshingCommands =
 		flags.getFlagValue(
 			[doubleDash("refreshCommands"), singleDash("R")],
 			true,
-		) === true
+		) === true;
+	if (
+		forceRefreshingCommands ||
+		!compareArraysContent(
+			(await getAllRegisteredCommandNames()) ?? [],
+			(await manager).getAllCommandNames(),
+		)
 	) {
-		if (
-			flags.getFlagValue(
-				[doubleDash("refreshCommands"), singleDash("R")],
-				true,
-			) === true
-		) {
+		if (forceRefreshingCommands) {
 			important("Refreshing commands...");
 		} else {
 			important("Command files change detected, refreshing...");
 		}
 		const allCommands = (await manager).getAllCommands();
-		important("Registering", allCommands.map((v) => v.name).join());
-		await registerCommands(allCommands);
-		important("Commands registered successfully");
+		important(
+			"Registering",
+			allCommands.map((v) => v.name).join(", "),
+			`Total: ${allCommands.length}`,
+		);
+		await registerCommands(allCommands)
+			.then(() => important("Commands registered successfully"))
+			.catch((err) => error("Failed to register commands:", err));
 	}
 	client.login(DEV ? DEV_TOKEN : TOKEN);
 })();
 
 client.on(Events.InteractionCreate, async (interaction) => {
-	if (interaction.isButton()) {
-		if (!interaction.guildId || !hasSessionManager(interaction.guildId)) {
-			return await interaction.update({ withResponse: false });
+	if (!interaction.isChatInputCommand() && !interaction.isButton()) return;
+	try {
+		if (interaction.isButton()) {
+			return await buttonInteractionHandler(interaction);
 		}
-		const manager = getSessionManager(interaction.guildId);
-		if (!manager) {
-			error(`No session manager found for guild ${interaction.guildId}`);
-			return await interaction.update({ withResponse: false });
+		const command = (await manager).getCommand(interaction.commandName);
+		if (!command) {
+			return await interaction.reply({
+				content: "This command does not exist.",
+				flags: [MessageFlags.Ephemeral],
+			});
 		}
-		if (manager.preparingResources) {
-			return await interaction.update({ withResponse: false });
-		}
-		if (interaction.message.deletable) {
-			await interaction.message.delete().catch();
-		}
-		switch (interaction.customId) {
-			case ButtonIds.LastClip: {
-				if (manager.currentPlayedItems.length === 0) {
-					return await interaction.reply({
-						content: "No clips have been played yet.",
-						flags: [MessageFlags.Ephemeral],
-					});
-				}
-				if (manager.playLastClip()) {
-					return await interaction.reply({
-						content: `Playing the last played clip (${manager.clipNumber - manager.currentQueue.length}/${manager.clipNumber})`,
-						components: [
-							createButtons({
-								lastClip: manager.currentPlayedItems.length > 0,
-								nextSong: false,
-							}),
-						],
-					});
-				}
-				break;
-			}
-			case ButtonIds.NextClip: {
-				if (manager.playNextClip()) {
-					return await interaction.reply({
-						content: `Playing the next clip (${manager.clipNumber - manager.currentQueue.length}/${manager.clipNumber})`,
-						components: [
-							createButtons({
-								lastClip: manager.currentPlayedItems.length > 0,
-								nextSong: false,
-							}),
-						],
-					});
-				}
-				await interaction.deferReply();
-				if (manager.currentItem) {
-					const lastId = manager.currentItem.id;
-					const lastMeta = await searchVideo(lastId);
-					if (!lastMeta) {
-						return await interaction.editReply({
-							content:
-								"Failed to fetch metadata for the last song.",
-						});
-					}
-
-					return await interaction.editReply({
-						content: readableSong(lastMeta, manager),
-						components: [
-							createButtons({
-								lastClip: manager.currentPlayedItems.length > 0,
-								nextSong: true,
-							}),
-						],
-					});
-				}
-				break;
-			}
-			case ButtonIds.Replay: {
-				manager.playCurrentClip();
-				return await interaction.reply({
-					content: `Replaying the last played clip (${manager.clipNumber - manager.currentQueue.length}/${manager.clipNumber})`,
-					components: [
-						createButtons({
-							lastClip: manager.currentPlayedItems.length > 0,
-							nextSong: false,
-						}),
-					],
-				});
-				break;
-			}
-			case ButtonIds.NextSong: {
-				await interaction.deferReply();
-				if (!(await manager.nextSong())) {
-					await interaction.editReply({
-						content: "No more songs in the queue.",
-					});
-					return destroySessionManager(interaction.guildId);
-				}
-				await interaction.editReply({
-					content: `Playing clip (1/${manager.clipNumber})`,
-					components: [
-						createButtons({
-							lastClip: manager.currentPlayedItems.length > 0,
-							nextSong: false,
-						}),
-					],
-				});
-				manager.playCurrentClip();
-				break;
-			}
-			case ButtonIds.Skip: {
-				if (manager.currentItem) {
-					await interaction.deferReply();
-					const lastId = manager.currentItem.id;
-					const lastMeta = await searchVideo(lastId);
-					if (!lastMeta) {
-						return await interaction.editReply({
-							content:
-								"Failed to fetch metadata for the last song.",
-						});
-					}
-
-					await interaction.editReply({
-						content: readableSong(lastMeta, manager),
-						components: [
-							createButtons({
-								lastClip: false,
-								nextSong: true,
-							}),
-						],
-					});
-				}
-				break;
-			}
-			default: {
-				return await interaction.reply({
-					content: "This button is not implemented yet.",
-					flags: [MessageFlags.Ephemeral],
-				});
-			}
-		}
-	}
-	if (!interaction.isChatInputCommand()) return;
-	const command = (await manager).getCommand(interaction.commandName);
-	if (!command) {
-		return await interaction.reply({
-			content: "This command does not exist.",
-			flags: [MessageFlags.Ephemeral],
-		});
-	}
-	Promise.try(() => command.execute(interaction)).catch((error) => {
-		error("Error executing command:", error);
+		command.execute(interaction);
+	} catch (err) {
+		error("Error executing command:", err);
 		interaction
 			.reply({
 				content: "There was an error while executing this command.",
 				flags: [MessageFlags.Ephemeral],
 			})
-			.catch(() => error("Failed to send error message"));
-	});
+			.catch(() => {
+				interaction
+					.editReply({
+						content:
+							"There was an error while executing this command.",
+					})
+					.catch(() => {
+						interaction
+							.followUp({
+								content:
+									"There was an error while executing this command.",
+								flags: [MessageFlags.Ephemeral],
+							})
+							.catch(() => {
+								error("Failed to send error message");
+							});
+					});
+			});
+	}
 });
 
 client.on(Events.ClientReady, () => {

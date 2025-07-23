@@ -3,6 +3,7 @@ import { appendFile } from "fs/promises";
 import { join } from "path";
 import { flags } from "../lib/shared";
 import { doubleDash, singleDash } from "./env/flag";
+import colors from "colors/safe";
 
 const baseLogPath = join(process.cwd(), "logs");
 const logFilePath = join(baseLogPath, "log.txt");
@@ -23,7 +24,7 @@ export function log(...data: unknown[]) {
 	);
 }
 export function error(...data: unknown[]) {
-	console.error(...data);
+	console.error(colors.red(data.join(" ")));
 	const errorMessage = `[ERR] ${new Date().toISOString()}: ${data.join(" ")}\n`;
 	appendFile(errorLogFilePath, errorMessage).catch((err) =>
 		console.error("[UNLOGGED] Failed to write to error log file:", err),
@@ -31,7 +32,7 @@ export function error(...data: unknown[]) {
 }
 export function warn(...data: unknown[]) {
 	if (!flags.getFlagValue([singleDash("N"), doubleDash("no_warn")], true)) {
-		console.warn(...data);
+		console.warn(colors.yellow(data.join(" ")));
 	}
 	const warnMessage = `[WARN] ${new Date().toISOString()}: ${data.join(" ")}\n`;
 	appendFile(logFilePath, warnMessage).catch((err) =>
@@ -43,7 +44,7 @@ export function important(...data: unknown[]) {
 	if (
 		!flags.getFlagValue([singleDash("N"), doubleDash("no_important")], true)
 	) {
-		console.log(...data);
+		console.log(colors.bgBlue(colors.bold(data.join(" "))));
 	}
 	const importantMessage = `[IMP] ${new Date().toISOString()}: ${data.join(" ")}\n`;
 	appendFile(logFilePath, importantMessage).catch((err) =>
