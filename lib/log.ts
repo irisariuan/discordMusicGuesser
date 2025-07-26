@@ -4,14 +4,15 @@ import { join } from "path";
 import { flags } from "../lib/shared";
 import { doubleDash, singleDash } from "./env/flag";
 import colors from "colors/safe";
+import { DEV } from "./env/env";
 
 const baseLogPath = join(process.cwd(), "logs");
-const logFilePath = join(baseLogPath, "log.txt");
-const errorLogFilePath = join(baseLogPath, "error.txt");
-const debugFilePath = join(baseLogPath, "debug.txt");
+const logFilePath = join(baseLogPath, DEV ? "dev/log.txt" : "log.txt");
+const errorLogFilePath = join(baseLogPath, DEV ? "dev/error.txt" : "error.txt");
+const debugFilePath = join(baseLogPath, DEV ? "dev/debug.txt" : "debug.txt");
 
 if (!existsSync(baseLogPath)) {
-	mkdirSync(baseLogPath);
+	mkdirSync(baseLogPath, { recursive: true });
 }
 
 export function log(...data: unknown[]) {
