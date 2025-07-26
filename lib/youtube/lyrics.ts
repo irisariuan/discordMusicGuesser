@@ -41,7 +41,7 @@ interface SongSearch {
 	url: string;
 }
 
-export async function searchForSong(query: string) {
+export async function searchSong(query: string) {
 	const baseUrl = new URL("https://search.azlyrics.com/search.php");
 	const constant = await getConstant();
 	if (!constant) return null;
