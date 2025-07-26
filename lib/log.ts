@@ -54,13 +54,13 @@ export function important(...data: unknown[]) {
 
 export function debug(...data: unknown[]) {
 	if (
-		!flags.getFlagValue(
+		flags.getFlagValue(
 			[singleDash("D"), singleDash("B"), doubleDash("debug")],
 			true,
 		)
-	)
-		return;
-	console.log(colors.bgMagenta(data.join(" ")));
+	) {
+		console.log(colors.bgMagenta(data.join(" ")));
+	}
 	const debugMessage = `[DEBUG] ${new Date().toISOString()}: ${data.join(" ")}\n`;
 	appendFile(debugFilePath, debugMessage).catch((err) =>
 		console.error("[UNLOGGED] Failed to write to log file:", err),

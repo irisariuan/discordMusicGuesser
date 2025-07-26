@@ -68,3 +68,51 @@ export function shuffleArray<T>(array: Array<T>) {
 	}
 	return arr;
 }
+
+export class CacheItem<T> {
+	private value: T | undefined;
+	ttl: number;
+	private timeoutId: NodeJS.Timeout | null = null;
+
+	constructor(initialValue?: T, ttl = 0) {
+		this.value = initialValue;
+		this.ttl = ttl;
+		this.updateTtl();
+	}
+
+	drop() {
+		if (this.timeoutId) {
+			clearTimeout(this.timeoutId);
+			this.timeoutId = null;
+		}
+		this.value = undefined;
+	}
+
+	set(newValue: T) {
+		this.value = newValue;
+		this.updateTtl();
+	}
+
+	get() {
+		return this.value;
+	}
+
+	hasValue() {
+		return this.value !== undefined;
+	}
+
+	get isExpired() {
+		return !this.hasValue();
+	}
+
+	updateTtl() {
+		if (this.timeoutId) {
+			clearTimeout(this.timeoutId);
+		}
+		if (this.ttl <= 0) return;
+		this.timeoutId = setTimeout(() => {
+			this.value = undefined;
+			this.timeoutId = null;
+		}, this.ttl);
+	}
+}

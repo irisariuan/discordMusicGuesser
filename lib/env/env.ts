@@ -16,6 +16,8 @@ if (!DEV && !process.env.CLIENT_ID) {
 
 export const TOKEN = process.env.TOKEN || "";
 export const CLIENT_ID = process.env.CLIENT_ID || "";
+export const OPENROUTER_TOKEN = process.env.OPENROUTER_TOKEN ?? null;
+export const MODEL = process.env.MODEL ?? null
 
 // DEV mode
 
@@ -28,3 +30,5 @@ if (DEV && !process.env.DEV_CLIENT_ID) {
 
 export const DEV_TOKEN = process.env.DEV_TOKEN || "";
 export const DEV_CLIENT_ID = process.env.DEV_CLIENT_ID || "";
+export const DEV_OPENROUTER_TOKEN = process.env.DEV_OPENROUTER_TOKEN ?? null;
+export const DEV_MODEL = process.env.DEV_MODEL ?? null;

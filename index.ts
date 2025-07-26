@@ -10,6 +10,7 @@ import { error, important, log } from "./lib/log";
 import { client, flags, manager } from "./lib/shared";
 import { compareArraysContent } from "./lib/utils";
 import { audioPromiseQueue } from "./lib/voice/fs";
+import { writeToTitlesFile } from "./lib/youtube/lyrics/fs";
 
 (async () => {
 	if (flags.getAllFlags().length > 0) {
@@ -113,8 +114,13 @@ process.stdin.on("data", async (data) => {
 			important("Exiting...");
 			await client.destroy();
 			important("Awaiting all downloads to finish...");
-			await Promise.all(audioPromiseQueue);
+			await Promise.all(audioPromiseQueue).catch((err) => error(err));
 			important("All downloads finished.");
+
+			important("Writing titles...");
+			await writeToTitlesFile().catch((err) => error(err));
+			important("Titles written finished.");
+			
 			log("Goodbye!");
 			process.exit(0);
 			break;
