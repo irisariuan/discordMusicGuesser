@@ -35,7 +35,7 @@ async function getConstant() {
 	return null;
 }
 
-interface SongSearch {
+export interface SongSearch {
 	artist: string;
 	song: string;
 	url: string;
