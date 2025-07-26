@@ -1,8 +1,10 @@
 import { anyInclude, partialSplit } from "../utils";
 
+export type BaseType = string | number | boolean;
+
 export interface Flag {
 	name: string;
-	value?: string | boolean | number;
+	value?: BaseType;
 	singleDash: boolean;
 }
 
@@ -77,13 +79,13 @@ export class FlagCollection {
 	public getFlagValue<T = null>(
 		comparable: FlagComparable | FlagComparable[],
 		defaultValueIfExists: T = null as T,
-	): string | boolean | number | T | undefined {
+	): BaseType | T | undefined {
 		const flag = this.getFlag(comparable);
 		return flag ? (flag.value ?? defaultValueIfExists) : undefined;
 	}
 }
 
-function transformValue(str: string): string | boolean | number {
+function transformValue(str: string): BaseType {
 	if (!Number.isNaN(Number(str))) {
 		return Number(str);
 	}

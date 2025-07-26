@@ -1,6 +1,4 @@
 import { JSDOM } from "jsdom";
-import { CacheItem } from "../utils";
-import { OpenRouterResponse } from "../typings/openRouter";
 import {
 	DEV,
 	DEV_MODEL,
@@ -8,7 +6,11 @@ import {
 	MODEL,
 	OPENROUTER_TOKEN,
 } from "../env/env";
+import { doubleDash } from "../env/flag";
 import { error } from "../log";
+import { flags } from "../shared";
+import { OpenRouterResponse } from "../typings/openRouter";
+import { CacheItem } from "../utils";
 import { getTitle, setTitle } from "./lyrics/fs";
 
 const constantCache = new CacheItem<string>(undefined, 5 * 60 * 1000); // 5 minutes
@@ -104,7 +106,11 @@ export async function getLyrics(url: string) {
 export async function obtainTitle(titleString: string, timeout = 10 * 1000) {
 	const token = DEV ? DEV_OPENROUTER_TOKEN : OPENROUTER_TOKEN;
 	const model = DEV ? DEV_MODEL : MODEL;
-	if (!token || !model) {
+	if (
+		!token ||
+		!model ||
+		flags.getFlagValue([doubleDash("noTitleCleaning")], true)
+	) {
 		return null;
 	}
 	const cachedTitle = getTitle(titleString);
