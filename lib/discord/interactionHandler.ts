@@ -1,13 +1,13 @@
 import { ButtonInteraction, MessageFlags } from "discord.js";
 import { ButtonIds, createButtons } from "./action";
-import { error } from "./log";
-import { readableSong } from "./utils/format";
+import { error } from "../log";
+import { readableSong } from "../utils/format";
 import {
 	hasSessionManager,
 	getSessionManager,
 	destroySessionManager,
-} from "./voice/session";
-import { searchVideo } from "./youtube/core";
+} from "../voice/session";
+import { searchVideo } from "../youtube/core";
 
 export default async function buttonInteractionHandler(
 	interaction: ButtonInteraction,
