@@ -6,13 +6,14 @@ import {
 import { DEV, DEV_TOKEN, TOKEN } from "./lib/env/env";
 import { doubleDash, singleDash } from "./lib/env/flag";
 import buttonInteractionHandler from "./lib/discord/interactionHandler";
-import { error, important, log } from "./lib/log";
+import { error, important, log, warn } from "./lib/log";
 import { client, flags, manager } from "./lib/shared";
 import { compareArraysContent } from "./lib/utils";
 import { audioPromiseQueue } from "./lib/voice/fs";
 import { writeToTitlesFile } from "./lib/youtube/lyrics/fs";
 
 (async () => {
+	const awaitedManager = await manager;
 	if (flags.getAllFlags().length > 0) {
 		for (const flag of flags.getAllFlags()) {
 			log(`${flag.name} : ${flag.value ?? "(NO VALUE)"}`);
@@ -23,19 +24,24 @@ import { writeToTitlesFile } from "./lib/youtube/lyrics/fs";
 			[doubleDash("refreshCommands"), singleDash("R")],
 			true,
 		) === true;
+	const registered = await getAllRegisteredCommandNames();
+	if (!registered) {
+		warn("Failed to fetch registered command names");
+	}
 	if (
 		forceRefreshingCommands ||
-		!compareArraysContent(
-			(await getAllRegisteredCommandNames()) ?? [],
-			(await manager).getAllCommandNames(),
-		)
+		(registered &&
+			!compareArraysContent(
+				registered,
+				awaitedManager.getAllCommandNames(),
+			))
 	) {
 		if (forceRefreshingCommands) {
 			important("Refreshing commands...");
 		} else {
 			important("Command files change detected, refreshing...");
 		}
-		const allCommands = (await manager).getAllCommands();
+		const allCommands = awaitedManager.getAllCommands();
 		important(
 			"Registering",
 			allCommands.map((v) => v.name).join(", "),
@@ -51,10 +57,11 @@ import { writeToTitlesFile } from "./lib/youtube/lyrics/fs";
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (!interaction.isChatInputCommand() && !interaction.isButton()) return;
 	try {
+		const awaitedManager = await manager;
 		if (interaction.isButton()) {
 			return await buttonInteractionHandler(interaction);
 		}
-		const command = (await manager).getCommand(interaction.commandName);
+		const command = awaitedManager.getCommand(interaction.commandName);
 		if (!command) {
 			return await interaction.reply({
 				content: "This command does not exist.",
@@ -109,6 +116,7 @@ const textDecoder = new TextDecoder();
 
 process.stdin.on("data", async (data) => {
 	const input = textDecoder.decode(data).trim();
+	const awaitedManager = await manager;
 	switch (input) {
 		case "/exit": {
 			important("Exiting...");
@@ -120,14 +128,14 @@ process.stdin.on("data", async (data) => {
 			important("Writing titles...");
 			await writeToTitlesFile().catch((err) => error(err));
 			important("Titles written finished.");
-			
+
 			log("Goodbye!");
 			process.exit(0);
 			break;
 		}
 		case "/reload": {
 			important("Reloading commands...");
-			const newCommands = await (await manager).load();
+			const newCommands = await awaitedManager.load();
 			if (newCommands) {
 				important(
 					`Reloaded successfully ${newCommands.map((v) => v.name).join(", ")} (Total: ${newCommands.length})`,

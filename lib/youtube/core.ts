@@ -116,13 +116,13 @@ export async function compareGuess(
 		return response.toLowerCase() === "true";
 	}
 	const search = await searchVideos(guess);
-	if (!search || !search.videos || search.videos.length === 0) {
+	if (!search || search.videos.length === 0) {
 		error("Failed to fetch video metadata for the guess");
 		return null;
 	}
 	const index = search.videos.findIndex(
 		(video) => video.videoId === answerId,
 	);
-	if (index <= -1) return null;
+	if (index <= -1) return 0;
 	return (search.videos.length - index) / search.videos.length; // 0 - 1, where 1 is the best match
 }

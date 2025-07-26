@@ -1,12 +1,13 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { BasicCommandFile } from "../lib/commands/type";
 import { getSessionManager } from "../lib/voice/session";
-import { compareGuess } from "../lib/youtube/core";
+import { compareGuess, searchVideoById } from "../lib/youtube/core";
 import { createButtons } from "../lib/discord/action";
 import { roundTo } from "../lib/utils";
 import { NO_AI } from "../lib/env/env";
 import { doubleDash } from "../lib/env/flag";
 import { flags } from "../lib/shared";
+import { readableSong } from "../lib/utils/format";
 
 const aiServiceAllowed = !(
 	flags.getFlagValue([doubleDash("noTitleCleaning")], true) || NO_AI
@@ -97,9 +98,10 @@ export default {
 				],
 			});
 		}
+		const answer = await searchVideoById(manager.currentItem.id);
 		if (result === 1) {
 			return interaction.editReply({
-				content: "Your guess is **COMPLETELY** correct🎉!",
+				content: `Your guess is **COMPLETELY** correct🎉!\n${answer ? readableSong(answer, manager) : "*No metadata found for the current song.*"}`,
 				components: [
 					createButtons({
 						nextSong: true,
@@ -109,7 +111,7 @@ export default {
 			});
 		}
 		return interaction.editReply({
-			content: `Your guess ${result > 0.8 ? "is" : "is mostly"} correct! (${roundTo(result * 100, 2)}%)`,
+			content: `Your guess ${result > 0.8 ? "is" : "is mostly"} correct! (${roundTo(result * 100, 2)}%)\n${answer ? readableSong(answer, manager) : "*No metadata found for the current song.*"}`,
 			components: [
 				createButtons({
 					nextSong: true,
