@@ -5,7 +5,7 @@ import { createSessionManager } from "../lib/voice/session";
 import { queueManagers } from "../lib/shared";
 import {
 	extractYouTubePlaylistId,
-	getVideoIdsFromPlaylist,
+	getVideoIdsByPlaylistId,
 } from "../lib/youtube/core";
 import { createButtons } from "../lib/discord/action";
 import { log } from "../lib/log";
@@ -70,7 +70,7 @@ export default {
 				flags: [MessageFlags.Ephemeral],
 			});
 		}
-		const videos = await getVideoIdsFromPlaylist(playlistId);
+		const videos = await getVideoIdsByPlaylistId(playlistId);
 		if (!videos) {
 			return interaction.reply({
 				content: "Failed to fetch videos from the playlist.",

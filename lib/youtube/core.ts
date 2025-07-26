@@ -1,8 +1,10 @@
 import yts from "yt-search";
 import { error, warn } from "../log";
 import NodeCache from "node-cache";
+import { ask } from "../ai/core";
 
 const searchCache = new NodeCache({ stdTTL: 60 * 60 * 24 });
+const searchIdCache = new NodeCache({ stdTTL: 60 * 60 * 24 });
 
 export function extractYouTubePlaylistId(url: string) {
 	if (!url) return null;
@@ -17,7 +19,7 @@ export function extractYouTubePlaylistId(url: string) {
 	return null;
 }
 
-export async function getVideoIdsFromPlaylist(playlistId: string) {
+export async function getVideoIdsByPlaylistId(playlistId: string) {
 	const result = await searchPlaylist(playlistId);
 	if (!result) {
 		error("Error fetching YouTube playlist info");
@@ -30,18 +32,37 @@ export function completeUrl(videoId: string) {
 	return `https://www.youtube.com/watch?v=${videoId}`;
 }
 
-export async function searchVideo(
+export async function searchVideoById(
 	videoId: string,
 ): Promise<yts.VideoMetadataResult | null> {
 	try {
-		const cached = searchCache.get(videoId);
+		const cached = searchIdCache.get(videoId);
 		if (cached) {
 			return cached as yts.VideoMetadataResult;
 		}
 		const fetched = await yts({ videoId });
-		searchCache.set(videoId, fetched);
+		searchIdCache.set(videoId, fetched);
 		return fetched;
 	} catch {
+		return null;
+	}
+}
+
+export async function searchVideos(query: string) {
+	try {
+		const cached = searchCache.get(query);
+		if (cached) {
+			return cached as yts.SearchResult;
+		}
+		const fetched = await yts(query);
+		if (fetched.videos.length === 0) {
+			warn("No videos found for the query:", query);
+			return null;
+		}
+		searchCache.set(query, fetched);
+		return fetched;
+	} catch (err) {
+		error("Error fetching YouTube video metadata for query:", query, err);
 		return null;
 	}
 }
@@ -64,4 +85,44 @@ export async function searchPlaylist(playlistId: string) {
 	} catch {
 		return null;
 	}
+}
+
+export async function compareGuess(
+	guess: string,
+	answerId: string,
+	useAi: false,
+): Promise<number | null>;
+export async function compareGuess(
+	guess: string,
+	answerId: string,
+	useAi: true,
+): Promise<boolean | null>;
+export async function compareGuess(
+	guess: string,
+	answerId: string,
+	useAi: boolean,
+): Promise<number | boolean | null> {
+	if (useAi) {
+		const answer = await searchVideoById(answerId);
+		if (!answer) {
+			error("Failed to fetch video metadata for the answer");
+			return null;
+		}
+		const response = await ask(
+			`Guess: ${guess}\nAnswer: ${answer?.title}`,
+			"Compare the guess with the answer and return true if they are the same song, otherwise return false. Guess and answer maybe in different languages. Return only true or false.",
+		);
+		if (!response) return null;
+		return response.toLowerCase() === "true";
+	}
+	const search = await searchVideos(guess);
+	if (!search || !search.videos || search.videos.length === 0) {
+		error("Failed to fetch video metadata for the guess");
+		return null;
+	}
+	const index = search.videos.findIndex(
+		(video) => video.videoId === answerId,
+	);
+	if (index <= -1) return null;
+	return (search.videos.length - index) / search.videos.length; // 0 - 1, where 1 is the best match
 }

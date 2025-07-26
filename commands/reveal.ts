@@ -2,7 +2,7 @@ import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { BasicCommandFile } from "../lib/commands/type";
 import { readableSong } from "../lib/utils/format";
 import { getSessionManager } from "../lib/voice/session";
-import { searchVideo } from "../lib/youtube/core";
+import { searchVideoById } from "../lib/youtube/core";
 
 export default {
 	commmandBuilder: new SlashCommandBuilder()
@@ -29,7 +29,7 @@ export default {
 			});
 		}
 		await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-		const currentSong = await searchVideo(manager.currentItem.id);
+		const currentSong = await searchVideoById(manager.currentItem.id);
 		if (!currentSong) {
 			return interaction.editReply({
 				content: "Failed to fetch metadata for the current song.",

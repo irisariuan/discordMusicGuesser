@@ -4,6 +4,7 @@ import { doubleDash, singleDash } from "./flag";
 
 export const DEV =
 	flags.getFlagValue([singleDash("D"), doubleDash("dev")], true) === true;
+export const NO_AI = flags.getFlagValue([doubleDash("noAI")], true)
 
 // Production mode
 

@@ -2,7 +2,7 @@ import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { BasicCommandFile } from "../lib/commands/type";
 import { shuffleArray } from "../lib/utils";
 import { getSessionManager } from "../lib/voice/session";
-import { searchVideo } from "../lib/youtube/core";
+import { searchVideoById } from "../lib/youtube/core";
 
 export default {
 	commmandBuilder: new SlashCommandBuilder()
@@ -43,7 +43,7 @@ export default {
 			manager.currentItem.id,
 		]);
 		const searchResults = (
-			await Promise.all(searchingIds.map(searchVideo))
+			await Promise.all(searchingIds.map(searchVideoById))
 		).filter((v) => v !== null);
 		const hints = searchResults.map(
 			(video) =>

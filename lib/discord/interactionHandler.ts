@@ -7,7 +7,7 @@ import {
 	getSessionManager,
 	destroySessionManager,
 } from "../voice/session";
-import { searchVideo } from "../youtube/core";
+import { searchVideoById } from "../youtube/core";
 
 export default async function buttonInteractionHandler(
 	interaction: ButtonInteraction,
@@ -62,7 +62,7 @@ export default async function buttonInteractionHandler(
 			await interaction.deferReply();
 			if (manager.currentItem) {
 				const lastId = manager.currentItem.id;
-				const lastMeta = await searchVideo(lastId);
+				const lastMeta = await searchVideoById(lastId);
 				if (!lastMeta) {
 					return await interaction.editReply({
 						content: "Failed to fetch metadata for the last song.",
@@ -118,7 +118,7 @@ export default async function buttonInteractionHandler(
 			if (manager.currentItem) {
 				await interaction.deferReply();
 				const lastId = manager.currentItem.id;
-				const lastMeta = await searchVideo(lastId);
+				const lastMeta = await searchVideoById(lastId);
 				if (!lastMeta) {
 					return await interaction.editReply({
 						content: "Failed to fetch metadata for the last song.",

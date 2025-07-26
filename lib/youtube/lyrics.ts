@@ -1,17 +1,17 @@
 import { JSDOM } from "jsdom";
+import { ask } from "../ai/core";
 import {
-	DEV,
-	DEV_MODEL,
-	DEV_OPENROUTER_TOKEN,
-	MODEL,
-	OPENROUTER_TOKEN,
+    DEV,
+    DEV_MODEL,
+    DEV_OPENROUTER_TOKEN,
+    MODEL,
+    OPENROUTER_TOKEN,
 } from "../env/env";
 import { doubleDash } from "../env/flag";
 import { error } from "../log";
 import { flags } from "../shared";
-import { OpenRouterResponse } from "../typings/openRouter";
 import { CacheItem } from "../utils";
-import { getTitle, setTitle } from "./lyrics/fs";
+import { getTitle } from "./lyrics/fs";
 
 const constantCache = new CacheItem<string>(undefined, 5 * 60 * 1000); // 5 minutes
 
@@ -83,7 +83,6 @@ export async function getLyrics(url: string) {
 	if (el) {
 		const result: string[][] = [[]];
 		el.childNodes.forEach((node) => {
-			console.log(node.textContent);
 			if (
 				node.nodeName === "#text" &&
 				node.textContent &&
@@ -93,7 +92,6 @@ export async function getLyrics(url: string) {
 			}
 			if (node.nodeName === "I") {
 				if (result[result.length - 1].length > 0) {
-					console.log("splitted", node.textContent);
 					result.push([]);
 				}
 			}
@@ -115,45 +113,9 @@ export async function obtainTitle(titleString: string, timeout = 10 * 1000) {
 	}
 	const cachedTitle = getTitle(titleString);
 	if (cachedTitle) return cachedTitle;
-	const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${token}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			model,
-			messages: [
-				{
-					role: "system",
-					content:
-						"Obtain the title from the input, return the obtained title only, remove parentheses if any, remove the artist name if any, do not return any other text.",
-				},
-				{
-					role: "user",
-					content: titleString,
-				},
-			],
-		}),
-		signal: timeout > 0 ? AbortSignal.timeout(timeout) : undefined,
-	});
-	if (!res.ok) {
-		error(
-			"Failed to obtain title:",
-			res.status,
-			res.statusText,
-			await res.text().catch(() => "(ERROR)"),
-		);
-		return null;
-	}
-	const data: OpenRouterResponse | null = await res.json().catch(() => null);
-	if (!data) return null;
-	if (data.choices && data.choices.length > 0) {
-		if (data.choices[0].message.content) {
-			setTitle(titleString, data.choices[0].message.content);
-		}
-		return data.choices[0].message.content;
-	}
-	error("No choices found in the response:", data);
-	return null;
+	return await ask(
+		titleString,
+		"Obtain the title from the input, return the obtained title only, remove parentheses if any, remove the artist name if any, do not return any other text.",
+		timeout
+	);
 }

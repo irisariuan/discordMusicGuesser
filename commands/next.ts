@@ -3,7 +3,7 @@ import { createButtons } from "../lib/discord/action";
 import type { BasicCommandFile } from "../lib/commands/type";
 import { readableSong } from "../lib/utils/format";
 import { destroySessionManager, getSessionManager } from "../lib/voice/session";
-import { searchVideo } from "../lib/youtube/core";
+import { searchVideoById } from "../lib/youtube/core";
 
 export default {
 	commmandBuilder: new SlashCommandBuilder()
@@ -46,7 +46,7 @@ export default {
 		}
 		if (manager.currentItem) {
 			const lastId = manager.currentItem.id;
-			const lastMeta = await searchVideo(lastId);
+			const lastMeta = await searchVideoById(lastId);
 			if (!lastMeta) {
 				return interaction.editReply({
 					content: "Failed to fetch metadata for the last song.",
