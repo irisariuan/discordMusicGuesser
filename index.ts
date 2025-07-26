@@ -5,7 +5,7 @@ import {
 } from "./lib/commands/register";
 import { DEV, DEV_TOKEN, TOKEN } from "./lib/env/env";
 import { doubleDash, singleDash } from "./lib/env/flag";
-import buttonInteractionHandler from "./lib/interactionHandler";
+import buttonInteractionHandler from "./lib/discord/interactionHandler";
 import { error, important, log } from "./lib/log";
 import { client, flags, manager } from "./lib/shared";
 import { compareArraysContent } from "./lib/utils";

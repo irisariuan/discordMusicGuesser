@@ -7,7 +7,7 @@ import {
 	extractYouTubePlaylistId,
 	getVideoIdsFromPlaylist,
 } from "../lib/youtube/core";
-import { createButtons } from "../lib/action";
+import { createButtons } from "../lib/discord/action";
 import { log } from "../lib/log";
 
 export default {

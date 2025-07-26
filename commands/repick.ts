@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, MessageFlags } from "discord.js";
 import { BasicCommandFile } from "../lib/commands/type";
 import { getSessionManager } from "../lib/voice/session";
-import { createButtons } from "../lib/action";
+import { createButtons } from "../lib/discord/action";
 
 export default {
 	commmandBuilder: new SlashCommandBuilder()
