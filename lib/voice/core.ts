@@ -8,6 +8,7 @@ import {
 	calculateSegmentDurations,
 	getSegments,
 } from "../youtube/segments";
+import { getYoutubeMetadata } from "../youtube/lyrics/ytdlp";
 
 export interface PlayingResource {
 	buffer: Buffer;
@@ -29,7 +30,10 @@ export async function prepareRandomClips({
 }): Promise<{ resources: PlayingResource[]; buffer: Buffer }> {
 	const buffer = preparedBuffer ?? (await getVideo(id));
 	const metadata = await getMetadata(Readable.from(buffer));
-	const totalDuration = metadata.format.duration;
+	const totalDuration =
+		(metadata.format.format_name === "aac" // incorrect metadata from ffprobe for aac files
+			? (await getYoutubeMetadata(id))?.duration
+			: metadata.format.duration) ?? metadata.format.duration;
 
 	const segments = await getSegments(id);
 	const segmentTimemarks = segments

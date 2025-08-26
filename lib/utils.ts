@@ -50,7 +50,7 @@ export function anyInclude<T>(...arr: (T[] | T)[]) {
 
 export function randomFloat(from: number, to: number) {
 	if (from > to) {
-		throw new Error("From must be less than or equal to To");
+		throw new Error(`From must be less than or equal to To (${from} > ${to})`);
 	}
 	return Math.random() * (to - from + 1) + from;
 }

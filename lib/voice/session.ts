@@ -127,6 +127,7 @@ export class SessionManager {
 	}
 
 	play(buffer: Buffer) {
+		if (buffer.length <= 0) throw new Error("Buffer is empty");
 		this.currentResource = prepareAudioResource(buffer);
 		this.currentResource.volume?.setVolume(this.volume);
 		this.audioPlayer.play(this.currentResource);

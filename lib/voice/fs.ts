@@ -127,6 +127,8 @@ export function clipAudio(source: Readable, period: [number, number]) {
 		period[1].toString(),
 		"-c",
 		"copy",
+		"-c:a",
+		"libopus",
 		"-f",
 		"webm",
 		"pipe:1",
@@ -163,6 +165,7 @@ interface VideoMetadata {
 	format: {
 		duration: number;
 		bit_rate: number;
+		format_name: string;
 	};
 }
 
@@ -186,15 +189,15 @@ export function getMetadata(source: Readable): Promise<VideoMetadata> {
 	});
 	return new Promise<VideoMetadata>((resolve, reject) => {
 		proc.on("close", (code) => {
+			if (showLog) {
+				debug("Video Metadata:", allData);
+			}
 			if (code !== 0) {
 				error(`ffprobe process exited with code ${code}`);
 				return reject(new Error(`ffprobe exited with code ${code}`));
 			}
 			try {
 				const metadata: VideoMetadata = JSON.parse(allData);
-				if (showLog) {
-					debug("Video Metadata:", metadata);
-				}
 				resolve(metadata);
 			} catch (err) {
 				error("Failed to parse metadata:", err);
@@ -205,8 +208,17 @@ export function getMetadata(source: Readable): Promise<VideoMetadata> {
 	});
 }
 
+export async function getFolderSize() {
+	let totalSize = 0;
+	for (const filename of await readdir(downloadFolderPath)) {
+		const { size } = await stat(join(downloadFolderPath, filename));
+		totalSize += size;
+	}
+	return totalSize;
+}
+
 export async function checkFolderSize() {
-	const { size } = await stat(downloadFolderPath);
+	const size = (await getFolderSize()) / (1024 * 1024);
 	// 100 MB
 	if (size > 150) {
 		important("Downloads folder size exceeds 100 MB, cleaning up...");
@@ -214,6 +226,7 @@ export async function checkFolderSize() {
 		let counter = 0;
 		for (const file of files) {
 			counter++;
+
 			const filePath = join(downloadFolderPath, file);
 			await unlink(filePath);
 			log(`Deleted: ${filePath}`);
