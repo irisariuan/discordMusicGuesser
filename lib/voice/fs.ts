@@ -50,10 +50,13 @@ export function download(videoId: string) {
 			completeUrl(videoId),
 
 			"--format",
-			"bestaudio",
+			"bestaudio*",
 
 			"--no-playlist",
 			"--force-ipv4",
+			
+			'--audio-format',
+			'opus',
 
 			"-o",
 			"-",
