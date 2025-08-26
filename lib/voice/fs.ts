@@ -52,12 +52,8 @@ export function download(videoId: string) {
 			"--format",
 			"bestaudio",
 
-			"--add-metadata",
 			"--no-playlist",
 			"--force-ipv4",
-			
-			"--audio-format",
-			"opus",
 
 			"-o",
 			"-",
